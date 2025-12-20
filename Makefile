@@ -6,3 +6,6 @@ main_release:
 
 math_test: math_test.cpp
 	g++ -g math_test.cpp -o math_test
+
+tags:
+	ctags -R .

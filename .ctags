@@ -1,0 +1,5 @@
+--languages=C++
+--exclude=.git
+--kinds-C++=*
+--fields=+iaS
+#--c++-kinds=*

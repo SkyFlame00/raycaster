@@ -8,7 +8,7 @@
 const int SCREEN_WIDTH = 160;
 const int SCREEN_HEIGHT = 120;
 const float REAR_VIEW_DIST_LIMIT = 20.0f;
-const float FAR_VIEW_DIST_LIMIT = 250.0f;
+const float FAR_VIEW_DIST_LIMIT = 450.0f;
 
 constexpr int LEVEL_ROWS = 17;
 constexpr int LEVEL_COLS = 18;
@@ -56,6 +56,7 @@ class Player
 {
 public:
 	float m_ViewAngleDeg;
+	float m_Speed = 0.0f;
 	Vec2 m_Pos;
 };
 
@@ -86,10 +87,6 @@ bool IsSolidWall(int x, int y)
 	return GetCell(x, y) == '1';
 }
 
-float DegToRad(float deg)
-{
-	return deg * (M_PI / 180);
-}
 
 float Distance(const Vec2& v1, const Vec2& v2)
 {
@@ -140,8 +137,6 @@ void Render(Uint32* buf)
 		int playerCellX = g_Player.m_Pos.x / g_CellSize;
 		int playerCellY = g_Player.m_Pos.y / g_CellSize;
 		
-		// todo: make a check on world size
-
 		angle = NormalizeAngle(angle);
 
 		// find intersection points
@@ -163,6 +158,7 @@ void Render(Uint32* buf)
 			float curY;
 			float deltaX;
 			float deltaY;
+			// TODO: reduce the ifs below. I believe, we can calculate this from trigonometric functions without having to look at each individual quadrant.
 			if (0.0f <= angle && angle < 90.0f)
 			{
 				bLeftwardCast = false;
@@ -329,7 +325,10 @@ void Render(Uint32* buf)
 		}
 		else
 		{
-			heightRatio = (dist - REAR_VIEW_DIST_LIMIT) / (FAR_VIEW_DIST_LIMIT - REAR_VIEW_DIST_LIMIT);
+			// distNorm is in [0; 1] where 0 indicates that the object is on the rear view plane and 1 - on the far view plane.
+			// We need to inverse this number to get the correct height ratio (the smaller the distance to the object, the higher the height ratio should be)
+			float distNorm = (dist - REAR_VIEW_DIST_LIMIT) / (FAR_VIEW_DIST_LIMIT - REAR_VIEW_DIST_LIMIT);
+			heightRatio = 1.0f - distNorm;
 		}
 
 		int wallHeightPx = heightRatio * SCREEN_HEIGHT;
@@ -352,7 +351,8 @@ void Render(Uint32* buf)
 			//	color = 0xFFFF0000;
 			//}
 			
-			color = hCase ? 0xFF9B9DC7 : 0xFF6B6D8A;
+			//color = hCase ? 0xFF9B9DC7 : 0xFF6B6D8A;
+			color = hCase ? 0xFFA1A1A1 : 0xFF696969;
 			
 			buf[i * SCREEN_WIDTH + strip] = color;
 		}
@@ -361,7 +361,8 @@ void Render(Uint32* buf)
 		for (int i = ceilingHeightPx + wallHeightPx; i < SCREEN_HEIGHT; i++)
 		{
 			//Uint32 color = 0xFF555555;
-			Uint32 color = 0xFF3E3E4F;
+			//Uint32 color = 0xFF3E3E4F;
+			Uint32 color = 0xFF404040;
 			buf[i * SCREEN_WIDTH + strip] = color;
 		}
 	}
@@ -372,18 +373,29 @@ void HandleInput(float dt)
 	SDL_PumpEvents();
 
 	const Uint8* state = SDL_GetKeyboardState(nullptr);
-	const float speed = 180.0f; // 180 degrees per second
+	const float rotationSpeed = 180.0f; // 180 degrees per second
 
 	if (state[SDL_SCANCODE_A])
 	{
-		g_Player.m_ViewAngleDeg += dt * speed;
+		g_Player.m_ViewAngleDeg += dt * rotationSpeed;
 		std::cout << "View angle = " << g_Player.m_ViewAngleDeg << std::endl;
 	}
 
 	if (state[SDL_SCANCODE_D])
 	{
-		g_Player.m_ViewAngleDeg -= dt * speed;
+		g_Player.m_ViewAngleDeg -= dt * rotationSpeed;
 		std::cout << "View angle = " << g_Player.m_ViewAngleDeg << std::endl;
+	}
+
+	const float moveSpeed = 30.0f; // 30 units per second
+	if (state[SDL_SCANCODE_W])
+	{
+		g_Player.m_Speed = moveSpeed;
+	}
+
+	if (state[SDL_SCANCODE_S])
+	{
+		g_Player.m_Speed = -moveSpeed;
 	}
 }
 
