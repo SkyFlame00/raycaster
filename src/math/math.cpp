@@ -10,50 +10,56 @@ float RadToDeg(float rad)
 
 bool FindVIntersectionPoint(const Vec2& origin, float angleRad, const Vec2& levelSize, int cellSize, Vec2& o_VPoint, IVec2& o_Cell)
 {
-	bool bLeftwardCast;
-	bool bDownwardCast; 
-	float curX;
-	float curY;
-	float deltaX;
-	float deltaY;
+	// Algorithm:
+	// 1. Start at a certain position (origin) given a view angle (angleRad)
+	// 2. Go to the next vertical line and find its intersection with a line made up from the position and view angle
+	// 3. Check if the intersection point is within the game world
+	// 4. If so, check if the game cell (on which our current vertical line is lying) is solid. Otherwise, end search
+	// 5. If so, we have found the closest vertical intersection so. Otherwise, continue search
+	bool bLeftwardCast, bDownwardCast; 
+	float curX, curY;
+	float deltaX, deltaY;
+	IVec2 originCell;
 
-	angle
+	originCell.x = origin.x / cellSize;
+	originCell.y = origin.y / cellSize;
+
 	// TODO: reduce the ifs below. I believe, we can calculate this from trigonometric functions without having to look at each individual quadrant.
 	if (0.0f <= angle && angle < 90.0f)
 	{
 		bLeftwardCast = false;
 		bDownwardCast = false;
-		curX = (playerCellX + 1) * g_CellSize;
-		curY = (playerCellY + 1) * g_CellSize;
-		deltaX = g_CellSize;
-		deltaY = g_CellSize;
+		curX = (originCell.x + 1) * cellSize;
+		curY = (originCell.y + 1) * cellSize;
+		deltaX = cellSize;
+		deltaY = cellSize;
 	}
 	else if (90.0f <= angle && angle < 180.0f)
 	{
 		bLeftwardCast = true;
 		bDownwardCast = false;
-		curX = playerCellX * g_CellSize;
-		curY = (playerCellY + 1) * g_CellSize;
-		deltaX = -g_CellSize;
-		deltaY =  g_CellSize;	
+		curX = originCell.x * cellSize;
+		curY = (originCell.y + 1) * cellSize;
+		deltaX = -cellSize;
+		deltaY =  cellSize;	
 	}
 	else if (180.0f <= angle && angle < 270.0f)
 	{
 		bLeftwardCast = true;
 		bDownwardCast = true;
-		curX = playerCellX * g_CellSize;
-		curY = playerCellY * g_CellSize;
-		deltaX = -g_CellSize;
-		deltaY = -g_CellSize;
+		curX = originCellX * cellSize;
+		curY = originCellY * cellSize;
+		deltaX = -cellSize;
+		deltaY = -cellSize;
 	}
 	else if (270.0f <= angle && angle < 360.0f)
 	{
 		bLeftwardCast = false;
 		bDownwardCast = true;
-		curX = (playerCellX + 1) * g_CellSize;
-		curY = playerCellY * g_CellSize;
-		deltaX =  g_CellSize;
-		deltaY = -g_CellSize;
+		curX = (originCell.x + 1) * cellSize;
+		curY = originCell.y * cellSize;
+		deltaX =  cellSize;
+		deltaY = -cellSize;
 	}
 	else
 	{
@@ -62,37 +68,34 @@ bool FindVIntersectionPoint(const Vec2& origin, float angleRad, const Vec2& leve
 	}
 
 	float slope = tan(angleRad);
+	bool found = false;
 	
+	// TODO: this while should be re-written using a finite for-loop
 	while (true)
 	{
 		// y = M * (x - xp) + yp
-		// where x is curX and (xp; yp) is the player's pos
-		float y = slope * (curX - g_Player.m_Pos.x) + g_Player.m_Pos.y;	
-		int cellX = curX / g_CellSize - (bLeftwardCast ? 1 : 0);
-		int cellY = y / g_CellSize;
-		bool bWithinWorld = IsWithinWorld(cellX, cellY);
+		float y = slope * (curX - origin.x) + origin.y;	
+		int cellX = curX / cellSize - (bLeftwardCast ? 1 : 0);
+		int cellY = y / cellSize;
 
-		d_LastVerCellX = cellX;
-		d_LastVerCellY = cellY;
-		if (bWithinWorld)
+		o_VPoint = { curX, y };
+		o_Cell = { cellX, cellY };
+
+		bool bWithinWorld = IsWithinWorld(cellX, cellY);
+		if (!bWithinWorld)
+			break;
+
+		bool bSolidWall = IsSolidWall(cellX, cellY);
+		if (bSolidWall)
 		{
-			bool bSolidWall = IsSolidWall(cellX, cellY);
-			if (bSolidWall)
-			{
-				hasVerIntersection = true;
-				VerPoint = { curX, y };
-				vCellX = cellX;
-				vCellY = cellY;
-				break;
-			}	
-			else
-			{
-				curX += deltaX;
-			}
-		}
+			found = true;
+			break;
+		}	
 		else
 		{
-			break;
+			curX += deltaX;
 		}
 	}
+
+	return found;
 }
