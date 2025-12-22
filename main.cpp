@@ -3,16 +3,12 @@
 #include <cmath>
 #include <cstdio>
 
-//const int SCREEN_WIDTH = 640;
-//const int SCREEN_HEIGHT = 480;
-const int SCREEN_WIDTH = 160;
-const int SCREEN_HEIGHT = 120;
-const float REAR_VIEW_DIST_LIMIT = 20.0f;
-const float FAR_VIEW_DIST_LIMIT = 450.0f;
+#include "./src/constants.h"
+#include "./src/math/math.h"
+#include "./src/game_algorithms.h"
+#include "./src/Level.h"
 
-constexpr int LEVEL_ROWS = 17;
-constexpr int LEVEL_COLS = 18;
-const char* g_LevelMirrored = 
+const char* g_RawLevelData = 
                     "111111111111111111"\
                     "1P  1            1"\
                     "1   1            1"\
@@ -30,27 +26,8 @@ const char* g_LevelMirrored =
                     "1  111     111   1"\
                     "1                1"\
                     "111111111111111111";
-char g_Level[LEVEL_ROWS*LEVEL_COLS];
-
-struct Vec2
-{
-	float x, y;
-	
-	Vec2 operator+(const Vec2& other) const
-	{
-		return {x + other.x, y + other.y};
-	}
-
-	Vec2 operator-(const Vec2& other) const
-	{
-		return {x - other.x, y - other.y};
-	}
-
-	float Length()
-	{
-		return sqrtf(x*x + y*y);
-	}
-};
+//char g_Level[LEVEL_ROWS*LEVEL_COLS];
+Level* g_Level = nullptr;
 
 class Player
 {
@@ -60,8 +37,8 @@ public:
 	Vec2 m_Pos;
 };
 
-const int g_CellSize = 64;
-Vec2 g_WorldSize = { LEVEL_COLS * g_CellSize, LEVEL_ROWS * g_CellSize };
+const int g_CellSize = 64; // TODO: remove
+//Vec2 g_WorldSize = { LEVEL_COLS * g_CellSize, LEVEL_ROWS * g_CellSize };
 Player g_Player;
 int g_FOV = 60;
 
@@ -76,22 +53,12 @@ void MirrorLevelString(const char* src, char* dst)
 	}
 }
 
-char GetCell(int x, int y)
-{
-	//return g_Level[(LEVEL_ROWS - 1) - y + x];
-	return g_Level[LEVEL_COLS*y + x];
-}
-
-bool IsSolidWall(int x, int y)
-{
-	return GetCell(x, y) == '1';
-}
+//bool IsSolidWall(int x, int y)
+//{
+//	return GetCell(x, y) == '1';
+//}
 
 
-float Distance(const Vec2& v1, const Vec2& v2)
-{
-	return (v1 - v2).Length();
-}
 
 void SpawnPlayer(Player& player, int rows, int cols)
 {
@@ -99,7 +66,7 @@ void SpawnPlayer(Player& player, int rows, int cols)
 	{
 		for (int col = 0; col < cols; col++)
 		{
-			if (GetCell(col, row) == 'P')
+			if (g_Level->GetAt(col, row) == 'P')
 			{
 				float cellCenter = g_CellSize / 2.0f;
 				player.m_Pos.x = g_CellSize * col + cellCenter;
@@ -119,11 +86,11 @@ float NormalizeAngle(float angle)
 	return angle;
 }
 
-bool IsWithinWorld(int cellX, int cellY)
-{
-	return 0 <= cellX && cellX <= g_WorldSize.x
-		&& 0 <= cellY && cellY <= g_WorldSize.y;
-}
+//bool IsWithinWorld(int cellX, int cellY)
+//{
+//	return 0 <= cellX && cellX <= g_WorldSize.x
+//		&& 0 <= cellY && cellY <= g_WorldSize.y;
+//}
 
 void Render(Uint32* buf)
 {
@@ -138,150 +105,29 @@ void Render(Uint32* buf)
 		int playerCellY = g_Player.m_Pos.y / g_CellSize;
 		
 		angle = NormalizeAngle(angle);
+		float angleRad = DegreesToRadians(angle);
 
 		// find intersection points
-		Vec2 HorPoint;
-		Vec2 VerPoint;
-		int hCellX, hCellY;
-		int vCellX, vCellY;
-		bool hasVerIntersection = false;
-		bool hasHorIntersection = false;
+		Vec2 hPoint, vPoint;
+		IVec2 hCell, vCell;
+		bool hasHorIntersection = FindHIntersectionPoint(g_Player.m_Pos, angleRad, *g_Level, hPoint, hCell);
+		bool hasVerIntersection = FindVIntersectionPoint(g_Player.m_Pos, angleRad, *g_Level, vPoint, vCell);
 		int d_TargetStrip = 0;
-		int d_LastVerCellX = -1;
-		int d_LastVerCellY = -1;
-		int d_LastHorCellX = -1;
-		int d_LastHorCellY = -1;
+		if (!hasHorIntersection && !hasVerIntersection)
 		{
-			bool bLeftwardCast;
-			bool bDownwardCast; 
-			float curX;
-			float curY;
-			float deltaX;
-			float deltaY;
-			// TODO: reduce the ifs below. I believe, we can calculate this from trigonometric functions without having to look at each individual quadrant.
-			if (0.0f <= angle && angle < 90.0f)
+			// sth went wrong: assert and exit
+			if (strip == d_TargetStrip)
 			{
-				bLeftwardCast = false;
-				bDownwardCast = false;
-				curX = (playerCellX + 1) * g_CellSize;
-				curY = (playerCellY + 1) * g_CellSize;
-				deltaX = g_CellSize;
-				deltaY = g_CellSize;
+				std::printf("No intersection. HorPoint: (%d, %d), VerPoint: (%d, %d)\n",
+					hCell.x, hCell.y, vCell.x, vCell.y);
 			}
-			else if (90.0f <= angle && angle < 180.0f)
-			{
-				bLeftwardCast = true;
-				bDownwardCast = false;
-				curX = playerCellX * g_CellSize;
-				curY = (playerCellY + 1) * g_CellSize;
-				deltaX = -g_CellSize;
-				deltaY =  g_CellSize;	
-			}
-			else if (180.0f <= angle && angle < 270.0f)
-			{
-				bLeftwardCast = true;
-				bDownwardCast = true;
-				curX = playerCellX * g_CellSize;
-				curY = playerCellY * g_CellSize;
-				deltaX = -g_CellSize;
-				deltaY = -g_CellSize;
-			}
-			else if (270.0f <= angle && angle < 360.0f)
-			{
-				bLeftwardCast = false;
-				bDownwardCast = true;
-				curX = (playerCellX + 1) * g_CellSize;
-				curY = playerCellY * g_CellSize;
-				deltaX =  g_CellSize;
-				deltaY = -g_CellSize;
-			}
-			else
-			{
-				// report error
-				return;
-			}
-			float rad = DegToRad(angle);
-			float slope = tan(rad);
-			
-			while (true)
-			{
-				// y = M * (x - xp) + yp
-				// where x is curX and (xp; yp) is the player's pos
-				float y = slope * (curX - g_Player.m_Pos.x) + g_Player.m_Pos.y;	
-				int cellX = curX / g_CellSize - (bLeftwardCast ? 1 : 0);
-				int cellY = y / g_CellSize;
-				bool bWithinWorld = IsWithinWorld(cellX, cellY);
-
-				d_LastVerCellX = cellX;
-				d_LastVerCellY = cellY;
-				if (bWithinWorld)
-				{
-					bool bSolidWall = IsSolidWall(cellX, cellY);
-					if (bSolidWall)
-					{
-						hasVerIntersection = true;
-						VerPoint = { curX, y };
-						vCellX = cellX;
-						vCellY = cellY;
-						break;
-					}	
-					else
-					{
-						curX += deltaX;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-
-			while (true)
-			{
-				float x = (1.0f / slope) * (curY - g_Player.m_Pos.y) + g_Player.m_Pos.x;
-				int cellX = x / g_CellSize;
-				int cellY = curY / g_CellSize - (bDownwardCast ? 1 : 0);
-				bool bWithinWorld = IsWithinWorld(cellX, cellY);
-
-				d_LastHorCellX = cellX;
-				d_LastHorCellY = cellY;
-
-				if (!bWithinWorld)
-					break;
-
-				bool bSolidWall = IsSolidWall(cellX, cellY);
-				if (bSolidWall)
-				{
-					hasHorIntersection = true;
-					HorPoint = { x, curY };
-					hCellX = cellX;
-					hCellY = cellY;
-					break;
-				}
-				else
-				{
-					curY += deltaY;
-				}
-			}
-
-
-			if (!hasHorIntersection && !hasVerIntersection)
-			{
-				// sth went wrong: assert and exit
-				if (strip == d_TargetStrip)
-				{
-					std::printf("No intersection. HorPoint: (%d, %d), VerPoint: (%d, %d)\n",
-						d_LastHorCellX, d_LastHorCellY, d_LastVerCellX, d_LastVerCellY);
-					std::cout << "No intersection occurred!\n";
-				}
-				return;
-			}
+			return;
 		}
 		
 		// find distance to the closest intersection
 		float dist = 0.0f;
-		float horPointDist = Distance(HorPoint, g_Player.m_Pos);
-		float verPointDist = Distance(VerPoint, g_Player.m_Pos); 
+		float horPointDist = Distance(hPoint, g_Player.m_Pos);
+		float verPointDist = Distance(vPoint, g_Player.m_Pos); 
 		int cellX = 0;
 		int cellY = 0;
 		bool bothIntersections = hasHorIntersection && hasVerIntersection;
@@ -291,21 +137,21 @@ void Render(Uint32* buf)
 		bool d_HasIntersection = hasHorIntersection || hasVerIntersection;
 		if (d_HasIntersection && strip == d_TargetStrip)
 		{
-			//std::printf("IsHor=%d. Hor: (%d, %d). Ver: (%d, %d)\n", hCase, d_LastHorCellX, d_LastHorCellY, d_LastVerCellX, d_LastVerCellY);
+			std::printf("IsHor=%d. Hor: (%d, %d). Ver: (%d, %d)\n", hCase, hCell.x, hCell.y, vCell.x, vCell.y);
 		}
 
 
 		if (hCase)
 		{
 			dist = horPointDist;
-			cellX = hCellX;
-			cellY = hCellY;
+			cellX = hCell.x;
+			cellY = hCell.y;
 		}
 		else if (vCase)
 		{
 			dist = verPointDist;
-			cellX = vCellX;
-			cellY = vCellY;
+			cellX = vCell.x;
+			cellY = vCell.y;
 		}
 
 		if (1 && strip == d_TargetStrip)
@@ -387,7 +233,9 @@ void HandleInput(float dt)
 		std::cout << "View angle = " << g_Player.m_ViewAngleDeg << std::endl;
 	}
 
-	const float moveSpeed = 30.0f; // 30 units per second
+	g_Player.m_Speed = 0.0f;
+
+	const float moveSpeed = 200.0f * dt;
 	if (state[SDL_SCANCODE_W])
 	{
 		g_Player.m_Speed = moveSpeed;
@@ -395,7 +243,44 @@ void HandleInput(float dt)
 
 	if (state[SDL_SCANCODE_S])
 	{
-		g_Player.m_Speed = -moveSpeed;
+		//g_Player.m_Speed = -moveSpeed;
+	}
+}
+
+void PhysicsFrame(float dt)
+{
+	float speed = g_Player.m_Speed;
+	if (speed > 0.0f)
+	{
+		float normAngleDeg = NormalizeAngle(g_Player.m_ViewAngleDeg);
+		float angleRad = DegreesToRadians(normAngleDeg);
+		float dx = speed * cosf(angleRad);
+		float dy = speed * sinf(angleRad);
+		Vec2 pos = g_Player.m_Pos;
+		Vec2 projPoint = { pos.x + dx, pos.y + dy };
+		Vec2 wallPoint;
+		IVec2 wallCell;
+		
+		bool found = FindIntersectionPoint(pos, angleRad, *g_Level, wallPoint, wallCell);
+		if (!found)
+		{
+			// report an error
+			return;
+		}
+
+		Vec2 dstPoint;
+		float distToProjPoint = std::abs(projPoint.Length() - pos.Length());
+		float distToWallPoint = std::abs(wallPoint.Length() - pos.Length());
+		if (distToProjPoint < distToWallPoint)
+		{
+			dstPoint = projPoint;
+		}
+		else
+		{
+			dstPoint = wallPoint;
+		}
+
+		g_Player.m_Pos = dstPoint;
 	}
 }
 
@@ -439,7 +324,11 @@ int main()
 	SDL_Event event;
 	int frame = 0;
 
-	MirrorLevelString(g_LevelMirrored, g_Level);
+	char levelData[LEVEL_ROWS*LEVEL_COLS];
+	IVec2 levelSize = { LEVEL_COLS * g_CellSize, LEVEL_ROWS * g_CellSize };
+	MirrorLevelString(g_RawLevelData, levelData);
+	g_Level = new Level(levelData, levelSize, (int32_t)g_CellSize);
+
 	SpawnPlayer(g_Player, LEVEL_ROWS, LEVEL_COLS);
 
 	Uint32 lastTime = SDL_GetTicks();
@@ -456,6 +345,7 @@ int main()
 		lastTime = currentTime;
 
 		HandleInput(dt);
+		PhysicsFrame(dt);
 
 		void* pixels;
 		int pitch; // it's measured in bytes
@@ -513,6 +403,8 @@ int main()
 	        frame++;
 	       	//SDL_Delay(16); // ~60 FPS
     	}
+
+	delete g_Level; // TODO: remove raw pointes
 
     	SDL_DestroyTexture(texture);
     	SDL_DestroyRenderer(renderer);
