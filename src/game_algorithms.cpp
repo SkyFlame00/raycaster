@@ -202,13 +202,17 @@ bool FindIntersectionPoint(const Vec2& origin, float angleRad, const Level& leve
 
 	if (bHIntersection || bVIntersection)
 	{
-		float hDist = hPoint.Length();
-		float vDist = vPoint.Length();
+		float hDist = Distance(origin, hPoint);
+		float vDist = Distance(origin, vPoint);
 		bool bBothIntersections = bHIntersection && bVIntersection;
 		bool hCase = (bBothIntersections && (hDist <  vDist)) || (!bBothIntersections && bHIntersection);
 		bool vCase = (bBothIntersections && (hDist >= vDist)) || (!bBothIntersections && bVIntersection);
 
 		found = true;
+
+		//std::printf("hCase: %d\n", hCase);
+		//std::printf("hPt.x: %.1f, hPt.y: %.1f, hCellX: %d, hCellY: %d, hDist: %.1f\n", hPoint.x, hPoint.y, hCell.x, hCell.y, hDist);
+		//std::printf("vPt.x: %.1f, vPt.y: %.1f, vCellX: %d, vCellY: %d, vDist: %.1f\n", vPoint.x, vPoint.y, vCell.x, vCell.y, vDist);
 
 		if (hCase)
 		{
@@ -222,12 +226,12 @@ bool FindIntersectionPoint(const Vec2& origin, float angleRad, const Level& leve
 		}
 		else
 		{
-			// report an error
+			std::printf("Neither hCase nor vCase took place\n");
 		}	
 	}
 	else
 	{
-		// report an error
+		std::printf("No intersection occurred. Seems like we went out of the world's bounds\n");
 	}
 
 	return found;

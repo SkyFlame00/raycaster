@@ -1,8 +1,13 @@
 BUILD = build
 SRC = src
+BIN = bin
 
 $(BUILD):
 	mkdir -p build
+	mkdir -p bin
+
+$(BIN):
+	mkdir -p bin
 
 OBJS = $(BUILD)/main.o $(BUILD)/math.o $(BUILD)/game_algorithms.o $(BUILD)/Level.o
 
@@ -23,10 +28,10 @@ program: $(OBJS)
 	g++ -g $^ -o ray -lSDL2
 
 main_release:
-	g++ main.cpp -o ray_release -lSDL2
+	g++ main.cpp -o $(BIN)/ray_release -lSDL2
 
 math_test: math_test.cpp
-	g++ -g math_test.cpp -o math_test
+	g++ -g math_test.cpp -o $(BIN)/math_test
 
 tags:
 	ctags -R .

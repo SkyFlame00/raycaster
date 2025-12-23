@@ -19,6 +19,13 @@ bool Level::IsSolidWall(const IVec2& cell) const
 	return GetAt(cell.x, cell.y) == '1';
 }
 
+bool Level::IsSolidWall(const Vec2& pos) const
+{
+	int32_t cellX = pos.x / (float)m_CellSize;
+	int32_t cellY = pos.y / (float)m_CellSize;
+	return IsSolidWall(IVec2({ cellX, cellY }));
+}
+
 char Level::GetAt(int x, int y) const
 {
 	return m_Data[LEVEL_COLS*y + x];

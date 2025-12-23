@@ -17,6 +17,11 @@ struct Vec2
 		return {x - other.x, y - other.y};
 	}
 
+	Vec2 operator*(float scalar) const
+	{
+		return {scalar * x, scalar * y};
+	}
+
 	float Length()
 	{
 		return sqrtf(x*x + y*y);

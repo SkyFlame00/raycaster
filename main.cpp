@@ -53,13 +53,6 @@ void MirrorLevelString(const char* src, char* dst)
 	}
 }
 
-//bool IsSolidWall(int x, int y)
-//{
-//	return GetCell(x, y) == '1';
-//}
-
-
-
 void SpawnPlayer(Player& player, int rows, int cols)
 {
 	for (int row = 0; row < rows; row++)
@@ -85,12 +78,6 @@ float NormalizeAngle(float angle)
 	angle += (angle < 0 ? 360.0f : 0.0f);
 	return angle;
 }
-
-//bool IsWithinWorld(int cellX, int cellY)
-//{
-//	return 0 <= cellX && cellX <= g_WorldSize.x
-//		&& 0 <= cellY && cellY <= g_WorldSize.y;
-//}
 
 void Render(Uint32* buf)
 {
@@ -137,7 +124,7 @@ void Render(Uint32* buf)
 		bool d_HasIntersection = hasHorIntersection || hasVerIntersection;
 		if (d_HasIntersection && strip == d_TargetStrip)
 		{
-			std::printf("IsHor=%d. Hor: (%d, %d). Ver: (%d, %d)\n", hCase, hCell.x, hCell.y, vCell.x, vCell.y);
+			//std::printf("IsHor=%d. Hor: (%d, %d). Ver: (%d, %d)\n", hCase, hCell.x, hCell.y, vCell.x, vCell.y);
 		}
 
 
@@ -156,7 +143,7 @@ void Render(Uint32* buf)
 
 		if (1 && strip == d_TargetStrip)
 		{
-			std::printf("view angle: %.2f. Dist: %.2f\n", angle, dist);
+			//std::printf("view angle: %.2f. Dist: %.2f\n", angle, dist);
 		}
 
 		// draw the strip
@@ -192,22 +179,13 @@ void Render(Uint32* buf)
 		for (int i = ceilingHeightPx; i < ceilingHeightPx + wallHeightPx; i++)
 		{
 			Uint32 color = 0xFFD6D6D6;
-			//if (strip < 20)
-			//{
-			//	color = 0xFFFF0000;
-			//}
-			
-			//color = hCase ? 0xFF9B9DC7 : 0xFF6B6D8A;
 			color = hCase ? 0xFFA1A1A1 : 0xFF696969;
-			
 			buf[i * SCREEN_WIDTH + strip] = color;
 		}
 
 		// draw the floor
 		for (int i = ceilingHeightPx + wallHeightPx; i < SCREEN_HEIGHT; i++)
 		{
-			//Uint32 color = 0xFF555555;
-			//Uint32 color = 0xFF3E3E4F;
 			Uint32 color = 0xFF404040;
 			buf[i * SCREEN_WIDTH + strip] = color;
 		}
@@ -259,28 +237,47 @@ void PhysicsFrame(float dt)
 		Vec2 pos = g_Player.m_Pos;
 		Vec2 projPoint = { pos.x + dx, pos.y + dy };
 		Vec2 wallPoint;
-		IVec2 wallCell;
+		IVec2 _wallCell;
 		
-		bool found = FindIntersectionPoint(pos, angleRad, *g_Level, wallPoint, wallCell);
-		if (!found)
+		bool found = FindIntersectionPoint(pos, angleRad, *g_Level, wallPoint, _wallCell); if (!found)
 		{
 			// report an error
 			return;
 		}
 
+		float distToProjPoint = (projPoint - pos).Length();
+		float distToWallPoint = (wallPoint - pos).Length();
+
+		float x = cosf(angleRad);
+		float y = sinf(angleRad);
+		Vec2 dir = { x, y };
 		Vec2 dstPoint;
-		float distToProjPoint = std::abs(projPoint.Length() - pos.Length());
-		float distToWallPoint = std::abs(wallPoint.Length() - pos.Length());
 		if (distToProjPoint < distToWallPoint)
 		{
 			dstPoint = projPoint;
+			// TODO: this should be removed once we start using a circle as the collider
+			if (std::abs(distToProjPoint - distToWallPoint) < 5.0f)
+				dstPoint = dstPoint - (dir * 5.0f); // move the player back a bit
 		}
 		else
 		{
-			dstPoint = wallPoint;
+			// TODO: this should be removed once we start using a circle as the collider
+			dstPoint = wallPoint - (dir * 5.0f); // move the player back a bit
 		}
 
-		g_Player.m_Pos = dstPoint;
+		// TODO: remove debug code below
+		{
+			g_Player.m_Pos = dstPoint;
+
+			bool bPrevSolidWall = g_Level->IsSolidWall(pos);
+			int cellSize = g_Level->GetCellSize();
+			IVec2 oldCell = { (int)(pos.x / cellSize), (int)(pos.y / cellSize) };
+			IVec2 newCell = { (int)(g_Player.m_Pos.x / cellSize), (int)(g_Player.m_Pos.y / cellSize) };
+
+			bool bSolidWall = g_Level->IsSolidWall(g_Player.m_Pos);
+			if (bSolidWall)
+				std::printf("We're inside a solid wall");
+		}
 	}
 }
 
@@ -334,12 +331,6 @@ int main()
 	Uint32 lastTime = SDL_GetTicks();
 	while (running)
 	{
-		//while (SDL_PollEvent(&event))
-		//{
-	        //	if (event.type == SDL_QUIT)
-		//		running = false;
-		//}
-
 		Uint32 currentTime = SDL_GetTicks();
 		float dt = (currentTime - lastTime) / 1000.0f;
 		lastTime = currentTime;
@@ -351,19 +342,6 @@ int main()
 		int pitch; // it's measured in bytes
 		SDL_LockTexture(texture, nullptr, &pixels, &pitch);
 
-		//std::cout << "Pitch = " << pitch << std::endl;
-		//
-		//for (int y = 0; y < SCREEN_HEIGHT; ++y)
-		//{
-		//	for (int x = 0; x < SCREEN_WIDTH; ++x)
-		//	{
-		//		Uint8 r = (x + frame) % 256;
-		//		Uint8 g = (y + frame) % 256;
-		//		Uint8 b = ((x + y) / 2 + frame) % 256;
-		//		buf[y * (pitch / 4) + x] = (255 << 24) | (r << 16) | (g << 8) | b;
-		//	}
-		//}
-
 		Uint32* buf = static_cast<Uint32*>(pixels);
 
 		for (int y = 0; y < SCREEN_HEIGHT; y++)
@@ -373,24 +351,6 @@ int main()
 				buf[y*SCREEN_WIDTH + x] = 0x00000000;
 			}
 		}
-
-		
-	//	for (int y = 0; y < SCREEN_HEIGHT; y++)
-	//	{
-	//		for (int x = 0; x < SCREEN_WIDTH; x++)
-	//		{
-	//			int color = 0;
-	//			if (y < (SCREEN_HEIGHT/2))
-	//			{
-	//				color = 0xFFFF0000;
-	//			}
-	//			else
-	//			{
-	//				color = 0xFF00FF00;
-	//			}
-	//			buf[y*SCREEN_WIDTH + x] = color;
-	//		}
-	//	}
 
 		Render(buf);
 

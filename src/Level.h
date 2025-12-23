@@ -11,6 +11,7 @@ public:
 
 	bool IsCellWithinBounds(const IVec2& cell) const;
 	bool IsSolidWall(const IVec2& cell) const;
+	bool IsSolidWall(const Vec2& pos) const;
 	char GetAt(int x, int y) const;
 	int32_t GetCellSize() const { return m_CellSize; }
 
