@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <cstdio>
+#include <algorithm>
 
 #include "./src/constants.h"
 #include "./src/math/math.h"
@@ -33,6 +34,7 @@ class Player
 {
 public:
 	float m_ViewAngleDeg;
+	float m_MoveAngleDeg;
 	float m_Speed = 0.0f;
 	Vec2 m_Pos;
 };
@@ -148,7 +150,7 @@ void Render(Uint32* buf)
 
 		// draw the strip
 		float heightRatio = 0.0f;
-		if (dist <= REAR_VIEW_DIST_LIMIT)
+		if (dist <= NEAR_VIEW_DIST_LIMIT)
 		{
 			heightRatio = 1.0f;
 		}
@@ -160,8 +162,10 @@ void Render(Uint32* buf)
 		{
 			// distNorm is in [0; 1] where 0 indicates that the object is on the rear view plane and 1 - on the far view plane.
 			// We need to inverse this number to get the correct height ratio (the smaller the distance to the object, the higher the height ratio should be)
-			float distNorm = (dist - REAR_VIEW_DIST_LIMIT) / (FAR_VIEW_DIST_LIMIT - REAR_VIEW_DIST_LIMIT);
-			heightRatio = 1.0f - distNorm;
+			float distNorm = (dist - NEAR_VIEW_DIST_LIMIT) / (FAR_VIEW_DIST_LIMIT - NEAR_VIEW_DIST_LIMIT);
+			//heightRatio = 1.0f - distNorm;
+			heightRatio = 80.0f / dist;
+			heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
 		}
 
 		int wallHeightPx = heightRatio * SCREEN_HEIGHT;
@@ -198,39 +202,57 @@ void HandleInput(float dt)
 
 	const Uint8* state = SDL_GetKeyboardState(nullptr);
 	const float rotationSpeed = 180.0f; // 180 degrees per second
+	const float moveSpeed = 200.0f * dt;
+
+	g_Player.m_Speed = 0.0f;
 
 	if (state[SDL_SCANCODE_A])
 	{
-		g_Player.m_ViewAngleDeg += dt * rotationSpeed;
-		std::cout << "View angle = " << g_Player.m_ViewAngleDeg << std::endl;
+		if (state[SDL_SCANCODE_LALT])
+		{
+			g_Player.m_Speed = moveSpeed;
+			g_Player.m_MoveAngleDeg = NormalizeAngle(g_Player.m_ViewAngleDeg + 90.0f);
+		}
+		else
+		{
+			g_Player.m_ViewAngleDeg += dt * rotationSpeed;
+			//std::cout << "View angle = " << g_Player.m_ViewAngleDeg << std::endl;
+		}
 	}
 
 	if (state[SDL_SCANCODE_D])
 	{
-		g_Player.m_ViewAngleDeg -= dt * rotationSpeed;
-		std::cout << "View angle = " << g_Player.m_ViewAngleDeg << std::endl;
+		if (state[SDL_SCANCODE_LALT])
+		{
+			g_Player.m_Speed = moveSpeed;
+			g_Player.m_MoveAngleDeg = NormalizeAngle(g_Player.m_ViewAngleDeg - 90.0f);
+		}
+		else
+		{
+			g_Player.m_ViewAngleDeg -= dt * rotationSpeed;
+			//std::cout << "View angle = " << g_Player.m_ViewAngleDeg << std::endl;
+		}
 	}
 
-	g_Player.m_Speed = 0.0f;
-
-	const float moveSpeed = 200.0f * dt;
 	if (state[SDL_SCANCODE_W])
 	{
 		g_Player.m_Speed = moveSpeed;
+		g_Player.m_MoveAngleDeg = g_Player.m_ViewAngleDeg;
 	}
 
 	if (state[SDL_SCANCODE_S])
 	{
-		//g_Player.m_Speed = -moveSpeed;
+		g_Player.m_Speed = moveSpeed;
+		g_Player.m_MoveAngleDeg = NormalizeAngle(g_Player.m_ViewAngleDeg + 180.0f);
 	}
 }
 
 void PhysicsFrame(float dt)
 {
 	float speed = g_Player.m_Speed;
-	if (speed > 0.0f)
+	if (!IsZero(speed))
 	{
-		float normAngleDeg = NormalizeAngle(g_Player.m_ViewAngleDeg);
+		float normAngleDeg = NormalizeAngle(g_Player.m_MoveAngleDeg);
 		float angleRad = DegreesToRadians(normAngleDeg);
 		float dx = speed * cosf(angleRad);
 		float dy = speed * sinf(angleRad);

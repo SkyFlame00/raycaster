@@ -15,3 +15,8 @@ float Distance(const Vec2& v1, const Vec2& v2)
 	return (v1 - v2).Length();
 }
 
+bool IsZero(float x, float epsilon)
+{
+	return std::abs(x) < epsilon;
+}
+

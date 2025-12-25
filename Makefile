@@ -25,7 +25,7 @@ $(BUILD)/main.o: $(BUILD)
 
 # $^ - for prerequisites
 program: $(OBJS)
-	g++ -g $^ -o ray -lSDL2
+	g++ -g $^ -o $(BIN)/ray -lSDL2
 
 main_release:
 	g++ main.cpp -o $(BIN)/ray_release -lSDL2
