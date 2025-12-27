@@ -40,15 +40,15 @@ void Convert(float angle)
 }
 
 float near = 20.0f;
-float far = 300.0f;
-float DistNorm(float dist)
+float far = 700.0f;
+float DistNorm(float dist, float near, float far)
 {
 	return (dist - near) / (far - near);
 }
 
-float HeightRatio(float dist)
+float HeightRatio(float dist, float near, float far)
 {
-	return 1.0f - DistNorm(dist);
+	return 1.0f - DistNorm(dist, near, far);
 }
 
 int main()
@@ -57,8 +57,15 @@ int main()
 	{
 		float k = near / dist;
 
-		std::printf("Dist=%.2f, HeightRatio=%.2f, k=%.2f\n", dist, HeightRatio(dist), k);
+		std::printf("Dist=%.2f, HeightRatio=%.2f, k=%.2f\n", dist, HeightRatio(dist, 20.0f, 300.0f), k);
 	}
 
+	std::printf("\n\n====================\n\n");
+	for (float dist = 20.0f; dist < 701.0f; dist += 10.0f)
+	{
+		float k = near / dist;
+
+		std::printf("Dist=%.2f, HeightRatio=%.2f, k=%.2f\n", dist, HeightRatio(dist, 20.0f, 700.0f), k);
+	}
 	return 0;
 }
