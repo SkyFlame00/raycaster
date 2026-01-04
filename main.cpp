@@ -74,33 +74,31 @@ void SpawnPlayer(Player& player, int rows, int cols)
 	std::cout << "Player was not found in the level";
 }
  
-float NormalizeAngle(float angle)
-{
-	angle = fmodf(angle, 360.0f);
-	angle += (angle < 0 ? 360.0f : 0.0f);
-	return angle;
-}
-
 void Render(Uint32* buf)
 {
+	// The distance to the projection plane is determined by the FOV and screen width
+	// halfWidth / distToProjPlane = tan(FOV/2)
+	// TODO: make a diagram and put it in raycasting.md
+	float halfWidth = SCREEN_WIDTH / 2.0f;
+	float halfFOV = g_FOV / 2.0f;
+	float halfFOVTan = tanf(DegreesToRadians(halfFOV));
+	if (IsZero(halfFOVTan)) // TODO: handle differently
+		return;
+	float distToProjPlane = halfWidth / halfFOVTan;
+
 	for (int strip = 0; strip < SCREEN_WIDTH; strip++)
 	{
-		// Since strips are drawn from left to right, we should start with
-		// adding half FOV to the player's angle and then subtract arcLength one-by-one
-		float startAngle = g_Player.m_ViewAngleDeg + (g_FOV / 2);
-		float arcLength = static_cast<float>(g_FOV) / SCREEN_WIDTH;
-		float angle = startAngle - strip * arcLength;
-		int playerCellX = g_Player.m_Pos.x / g_CellSize;
-		int playerCellY = g_Player.m_Pos.y / g_CellSize;
+		// What we're doing here with xplane and angleRad is we're trying to get an angle at which a ray goes through strip N to get equally spaced (or linear) columns. Without this, the columns would look slightly non-linear. Look-up "fixed angle vs equally spaced columns"
+		// https://www.scottsmitelli.com/articles/we-can-fix-your-raycaster/
+		float xplane = halfWidth - strip;
+		float localAngleRad = atanf(xplane / distToProjPlane); // atan2f isn't needed since we use exactly I and IV quadrants
+		float worldAngleRad = localAngleRad + DegreesToRadians(g_Player.m_ViewAngleDeg);
 		
-		angle = NormalizeAngle(angle);
-		float angleRad = DegreesToRadians(angle);
-
 		// find intersection points
 		Vec2 hPoint, vPoint;
 		IVec2 hCell, vCell;
-		bool hasHorIntersection = FindHIntersectionPoint(g_Player.m_Pos, angleRad, *g_Level, hPoint, hCell);
-		bool hasVerIntersection = FindVIntersectionPoint(g_Player.m_Pos, angleRad, *g_Level, vPoint, vCell);
+		bool hasHorIntersection = FindHIntersectionPoint(g_Player.m_Pos, worldAngleRad, *g_Level, hPoint, hCell);
+		bool hasVerIntersection = FindVIntersectionPoint(g_Player.m_Pos, worldAngleRad, *g_Level, vPoint, vCell);
 		int d_TargetStrip = 0;
 		if (!hasHorIntersection && !hasVerIntersection)
 		{
@@ -129,7 +127,6 @@ void Render(Uint32* buf)
 			//std::printf("IsHor=%d. Hor: (%d, %d). Ver: (%d, %d)\n", hCase, hCell.x, hCell.y, vCell.x, vCell.y);
 		}
 
-
 		if (hCase)
 		{
 			dist = horPointDist;
@@ -142,35 +139,27 @@ void Render(Uint32* buf)
 			cellX = vCell.x;
 			cellY = vCell.y;
 		}
-
-		if (1 && strip == d_TargetStrip)
-		{
-			//std::printf("view angle: %.2f. Dist: %.2f\n", angle, dist);
-		}
-
-		// draw the strip
-		float heightRatio = 0.0f;
-		if (dist <= NEAR_VIEW_DIST_LIMIT)
-		{
-			heightRatio = 1.0f;
-		}
-		else if (dist >= FAR_VIEW_DIST_LIMIT)
-		{
-			heightRatio = 0.0f;
-		}
 		else
 		{
-			// distNorm is in [0; 1] where 0 indicates that the object is on the rear view plane and 1 - on the far view plane.
-			// We need to inverse this number to get the correct height ratio (the smaller the distance to the object, the higher the height ratio should be)
-			float distNorm = (dist - NEAR_VIEW_DIST_LIMIT) / (FAR_VIEW_DIST_LIMIT - NEAR_VIEW_DIST_LIMIT);
-			//heightRatio = 1.0f - distNorm;
-			heightRatio = 80.0f / dist;
-			heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
+			std::printf("Neither hCase nor vCase occurred\n");
 		}
 
-		int wallHeightPx = heightRatio * SCREEN_HEIGHT;
+		// Make a fish eye effect correction
+		float dot = cosf(localAngleRad);
+		float correctedDist = dot * dist;
+		float heightRatio = 80.0f / correctedDist;
+		heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
+
+		// TODO: round the result of heightRatio*SCREEN_HEIGHT if it's very close to the nearest integer. At the moment, some strips might differ in height by a pixel if we look at a wall perpendicularly. It's due to minuscule difference between those numbers
+		int wallHeightPx = std::round(heightRatio * SCREEN_HEIGHT);
 		int ceilingHeightPx = (SCREEN_HEIGHT - wallHeightPx) / 2;
 		int floorHeightPx = (SCREEN_HEIGHT - wallHeightPx) / 2;
+
+		//if (wallHeightPx == 59)
+		if (0)
+		{
+			//std::printf("h=%d, hDist=%.5f, vDist=%.5f, dot=%.5f, dist2=%.5f\n", wallHeightPx, horPointDist, verPointDist, dot, dist2);
+		}
 
 		// draw the ceiling/sky
 		for (int i = 0; i < ceilingHeightPx; i++)
@@ -249,6 +238,19 @@ void HandleInput(float dt)
 
 void PhysicsFrame(float dt)
 {
+	if (0)
+	{
+		float speed = g_Player.m_Speed;
+		float normAngleDeg = NormalizeAngle(g_Player.m_MoveAngleDeg);
+		float angleRad = DegreesToRadians(normAngleDeg);
+		float dx = speed * cosf(angleRad);
+		float dy = speed * sinf(angleRad);
+		Vec2 pos = g_Player.m_Pos;
+		Vec2 projPoint = { pos.x + dx, pos.y + dy };
+		g_Player.m_Pos = projPoint;
+		return;
+	}
+
 	float speed = g_Player.m_Speed;
 	if (!IsZero(speed))
 	{

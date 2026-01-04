@@ -51,3 +51,7 @@ float Distance(const Vec2& v1, const Vec2& v2);
 
 bool IsZero(float x, float epsilon = 1e-5f);
 
+float DotProduct(const Vec2& v1, const Vec2& v2);
+
+float NormalizeAngle(float angle);
+

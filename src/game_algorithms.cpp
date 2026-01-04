@@ -16,7 +16,8 @@ bool FindHIntersectionPoint(const Vec2& origin, float angleRad, const Level& lev
 	float deltaX, deltaY;
 	IVec2 originCell;
 	int32_t cellSize = level.GetCellSize();
-	float angle = RadiansToDegrees(angleRad);
+	//float angle = RadiansToDegrees(angleRad);
+	float angle = NormalizeAngle(RadiansToDegrees(angleRad));
 
 	originCell.x = origin.x / cellSize;
 	originCell.y = origin.y / cellSize;
@@ -110,7 +111,8 @@ bool FindVIntersectionPoint(const Vec2& origin, float angleRad, const Level& lev
 	float deltaX, deltaY;
 	IVec2 originCell;
 	int32_t cellSize = level.GetCellSize();
-	float angle = RadiansToDegrees(angleRad);
+	//float angle = RadiansToDegrees(angleRad);
+	float angle = NormalizeAngle(RadiansToDegrees(angleRad));
 
 	originCell.x = origin.x / cellSize;
 	originCell.y = origin.y / cellSize;

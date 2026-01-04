@@ -20,3 +20,15 @@ bool IsZero(float x, float epsilon)
 	return std::abs(x) < epsilon;
 }
 
+float DotProduct(const Vec2& v1, const Vec2& v2)
+{
+	return v1.x*v2.x + v1.y*v2.y;
+}
+
+float NormalizeAngle(float angle)
+{
+	angle = fmodf(angle, 360.0f);
+	angle += (angle < 0 ? 360.0f : 0.0f);
+	return angle;
+}
+
