@@ -3,6 +3,14 @@
 #include <cstdint>
 #include <cmath>
 
+const float ANGLE_0 = 0.0f;
+const float ANGLE_1 = M_PI / 180.0f;
+const float ANGLE_90 = 90.0f * ANGLE_1;
+const float ANGLE_180 = 180.0f * ANGLE_1;
+const float ANGLE_270 = 270.0f * ANGLE_1;
+const float ANGLE_360 = 360.0f * ANGLE_1;
+const float EPSILON = 1e-5f;
+
 struct Vec2
 {
 	float x, y;
@@ -49,9 +57,15 @@ float RadiansToDegrees(float rad);
 
 float Distance(const Vec2& v1, const Vec2& v2);
 
-bool IsZero(float x, float epsilon = 1e-5f);
+bool IsZero(float x, float epsilon = EPSILON);
+
+bool NearZero(float x, float epsilon = EPSILON);
+
+bool NearlyEqual(float a, float b, float epsilon = EPSILON);
 
 float DotProduct(const Vec2& v1, const Vec2& v2);
 
 float NormalizeAngle(float angle);
+
+float NormalizeAngleRad(float angleRad);
 

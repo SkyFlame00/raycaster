@@ -13,6 +13,7 @@ public:
 	bool IsSolidWall(const IVec2& cell) const;
 	bool IsSolidWall(const Vec2& pos) const;
 	char GetAt(int x, int y) const;
+	IVec2 GetSize() const { return m_Size; }
 	int32_t GetCellSize() const { return m_CellSize; }
 
 private:

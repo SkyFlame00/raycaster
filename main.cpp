@@ -27,7 +27,6 @@ const char* g_RawLevelData =
                     "1  111     111   1"\
                     "1                1"\
                     "111111111111111111";
-//char g_Level[LEVEL_ROWS*LEVEL_COLS];
 Level* g_Level = nullptr;
 
 class Player
@@ -40,7 +39,6 @@ public:
 };
 
 const int g_CellSize = 64; // TODO: remove
-//Vec2 g_WorldSize = { LEVEL_COLS * g_CellSize, LEVEL_ROWS * g_CellSize };
 Player g_Player;
 int g_FOV = 60;
 
@@ -74,7 +72,7 @@ void SpawnPlayer(Player& player, int rows, int cols)
 	std::cout << "Player was not found in the level";
 }
  
-void Render(Uint32* buf)
+void Render(Uint32* framebuffer)
 {
 	// The distance to the projection plane is determined by the FOV and screen width
 	// halfWidth / distToProjPlane = tan(FOV/2)
@@ -85,6 +83,8 @@ void Render(Uint32* buf)
 	if (IsZero(halfFOVTan)) // TODO: handle differently
 		return;
 	float distToProjPlane = halfWidth / halfFOVTan;
+	if (NearZero(distToProjPlane))
+		return;
 
 	for (int strip = 0; strip < SCREEN_WIDTH; strip++)
 	{
@@ -97,17 +97,13 @@ void Render(Uint32* buf)
 		// find intersection points
 		Vec2 hPoint, vPoint;
 		IVec2 hCell, vCell;
-		bool hasHorIntersection = FindHIntersectionPoint(g_Player.m_Pos, worldAngleRad, *g_Level, hPoint, hCell);
-		bool hasVerIntersection = FindVIntersectionPoint(g_Player.m_Pos, worldAngleRad, *g_Level, vPoint, vCell);
-		int d_TargetStrip = 0;
+		bool hasHorIntersection = FindIntersectionH(g_Player.m_Pos, worldAngleRad, *g_Level, hPoint, hCell);
+		bool hasVerIntersection = FindIntersectionV(g_Player.m_Pos, worldAngleRad, *g_Level, vPoint, vCell);
 		if (!hasHorIntersection && !hasVerIntersection)
 		{
 			// sth went wrong: assert and exit
-			if (strip == d_TargetStrip)
-			{
-				std::printf("No intersection. HorPoint: (%d, %d), VerPoint: (%d, %d)\n",
+			std::printf("No intersection. HorPoint: (%d, %d), VerPoint: (%d, %d)\n",
 					hCell.x, hCell.y, vCell.x, vCell.y);
-			}
 			return;
 		}
 		
@@ -120,12 +116,6 @@ void Render(Uint32* buf)
 		bool bothIntersections = hasHorIntersection && hasVerIntersection;
 		bool hCase = (bothIntersections && (horPointDist <  verPointDist)) || (!bothIntersections && hasHorIntersection);
 		bool vCase = (bothIntersections && (horPointDist >= verPointDist)) || (!bothIntersections && hasVerIntersection);
-
-		bool d_HasIntersection = hasHorIntersection || hasVerIntersection;
-		if (d_HasIntersection && strip == d_TargetStrip)
-		{
-			//std::printf("IsHor=%d. Hor: (%d, %d). Ver: (%d, %d)\n", hCase, hCell.x, hCell.y, vCell.x, vCell.y);
-		}
 
 		if (hCase)
 		{
@@ -145,9 +135,12 @@ void Render(Uint32* buf)
 		}
 
 		// Make a fish eye effect correction
-		float dot = cosf(localAngleRad);
-		float correctedDist = dot * dist;
-		float heightRatio = 80.0f / correctedDist;
+		const float wallHeight = 80.0f;
+		float correction = cosf(localAngleRad);
+		float correctedDist = correction * dist;
+		if (NearZero(correctedDist))
+			correctedDist = 1.0f;
+		float heightRatio = wallHeight / correctedDist;
 		heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
 
 		// TODO: round the result of heightRatio*SCREEN_HEIGHT if it's very close to the nearest integer. At the moment, some strips might differ in height by a pixel if we look at a wall perpendicularly. It's due to minuscule difference between those numbers
@@ -155,17 +148,11 @@ void Render(Uint32* buf)
 		int ceilingHeightPx = (SCREEN_HEIGHT - wallHeightPx) / 2;
 		int floorHeightPx = (SCREEN_HEIGHT - wallHeightPx) / 2;
 
-		//if (wallHeightPx == 59)
-		if (0)
-		{
-			//std::printf("h=%d, hDist=%.5f, vDist=%.5f, dot=%.5f, dist2=%.5f\n", wallHeightPx, horPointDist, verPointDist, dot, dist2);
-		}
-
 		// draw the ceiling/sky
 		for (int i = 0; i < ceilingHeightPx; i++)
 		{
 			Uint32 color = 0xFF000000;
-			buf[i * SCREEN_WIDTH + strip] = color;
+			framebuffer[i * SCREEN_WIDTH + strip] = color;
 		}
 
 		// draw the wall
@@ -173,14 +160,14 @@ void Render(Uint32* buf)
 		{
 			Uint32 color = 0xFFD6D6D6;
 			color = hCase ? 0xFFA1A1A1 : 0xFF696969;
-			buf[i * SCREEN_WIDTH + strip] = color;
+			framebuffer[i * SCREEN_WIDTH + strip] = color;
 		}
 
 		// draw the floor
 		for (int i = ceilingHeightPx + wallHeightPx; i < SCREEN_HEIGHT; i++)
 		{
 			Uint32 color = 0xFF404040;
-			buf[i * SCREEN_WIDTH + strip] = color;
+			framebuffer[i * SCREEN_WIDTH + strip] = color;
 		}
 	}
 }
@@ -263,7 +250,8 @@ void PhysicsFrame(float dt)
 		Vec2 wallPoint;
 		IVec2 _wallCell;
 		
-		bool found = FindIntersectionPoint(pos, angleRad, *g_Level, wallPoint, _wallCell); if (!found)
+		bool found = FindIntersection(pos, angleRad, *g_Level, wallPoint, _wallCell);
+		if (!found)
 		{
 			// report an error
 			return;
@@ -289,9 +277,11 @@ void PhysicsFrame(float dt)
 			dstPoint = wallPoint - (dir * 5.0f); // move the player back a bit
 		}
 
+		g_Player.m_Pos = dstPoint;
+
 		// TODO: remove debug code below
+		if (0)
 		{
-			g_Player.m_Pos = dstPoint;
 
 			bool bPrevSolidWall = g_Level->IsSolidWall(pos);
 			int cellSize = g_Level->GetCellSize();
@@ -366,17 +356,17 @@ int main()
 		int pitch; // it's measured in bytes
 		SDL_LockTexture(texture, nullptr, &pixels, &pitch);
 
-		Uint32* buf = static_cast<Uint32*>(pixels);
+		Uint32* framebuffer = static_cast<Uint32*>(pixels);
 
 		for (int y = 0; y < SCREEN_HEIGHT; y++)
 		{
 			for (int x = 0; x < SCREEN_WIDTH; x++)
 			{
-				buf[y*SCREEN_WIDTH + x] = 0x00000000;
+				framebuffer[y*SCREEN_WIDTH + x] = 0x00000000;
 			}
 		}
 
-		Render(buf);
+		Render(framebuffer);
 
 		SDL_UnlockTexture(texture);
 
