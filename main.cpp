@@ -3,8 +3,11 @@
 #include <cmath>
 #include <cstdio>
 #include <algorithm>
+#include <memory>
 
 #include "./src/constants.h"
+#include "./src/Platform.h"
+#include "./src/Window.h"
 #include "./src/math/math.h"
 #include "./src/game_algorithms.h"
 #include "./src/Level.h"
@@ -297,43 +300,16 @@ void PhysicsFrame(float dt)
 
 int main()
 {
-	std::cout << "Starting program..." << std::endl;
-	if (SDL_Init(SDL_INIT_VIDEO != 0))
-	{
-		std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
+	std::shared_ptr<ray::Platform> platform = ray::Platform::CreatePlatform();
+	if (platform == nullptr)
 		return 1;
-	}
 
-	SDL_Window* window = SDL_CreateWindow("SDL2 Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-
-	if (!window)
-	{
-		std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
-		SDL_Quit();
+	std::shared_ptr<ray::Window> window = platform->CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT);
+	if (window == nullptr)
 		return 1;
-	}
 
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	if (!renderer)
-	{
-		std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
-		SDL_DestroyWindow(window);
-		SDL_Quit();
-		return 1;
-	}
-
-	SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-	if (!texture)
-	{
-		std::cerr << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
-		SDL_DestroyRenderer(renderer);
-	        SDL_DestroyWindow(window);
-       		SDL_Quit();
-	        return 1;
-	}
 	bool running = true;
-	SDL_Event event;
-	int frame = 0;
+	//int frame = 0;
 
 	char levelData[LEVEL_ROWS*LEVEL_COLS];
 	IVec2 levelSize = { LEVEL_COLS * g_CellSize, LEVEL_ROWS * g_CellSize };
@@ -342,21 +318,17 @@ int main()
 
 	SpawnPlayer(g_Player, LEVEL_ROWS, LEVEL_COLS);
 
-	Uint32 lastTime = SDL_GetTicks();
+	uint64_t lastTime = platform->GetElapsedMs();
 	while (running)
 	{
-		Uint32 currentTime = SDL_GetTicks();
+		Uint32 currentTime = platform->GetElapsedMs();
 		float dt = (currentTime - lastTime) / 1000.0f;
 		lastTime = currentTime;
 
 		HandleInput(dt);
 		PhysicsFrame(dt);
 
-		void* pixels;
-		int pitch; // it's measured in bytes
-		SDL_LockTexture(texture, nullptr, &pixels, &pitch);
-
-		Uint32* framebuffer = static_cast<Uint32*>(pixels);
+		uint32_t* framebuffer = window->GetFramebuffer();
 
 		for (int y = 0; y < SCREEN_HEIGHT; y++)
 		{
@@ -368,22 +340,13 @@ int main()
 
 		Render(framebuffer);
 
-		SDL_UnlockTexture(texture);
+		window->Draw();
 
-       		SDL_RenderClear(renderer);
-       		SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-       		SDL_RenderPresent(renderer);
-
-	        frame++;
-	       	//SDL_Delay(16); // ~60 FPS
-    	}
+		//frame++;
+		//SDL_Delay(16); // ~60 FPS
+	}
 
 	delete g_Level; // TODO: remove raw pointes
-
-    	SDL_DestroyTexture(texture);
-    	SDL_DestroyRenderer(renderer);
-    	SDL_DestroyWindow(window);
-    	SDL_Quit();
 
 	return 0;
 }

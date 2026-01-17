@@ -1,6 +1,9 @@
-tags
-build
-bin
+build/
+bin/
+logs/
 
 *.swp
+
+tags
+.gdb_history
 

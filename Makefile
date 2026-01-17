@@ -1,3 +1,4 @@
+#CFLAGS = -g -fdiagnostics-color=always
 BUILD = build
 SRC = src
 BIN = bin
@@ -9,7 +10,7 @@ $(BUILD):
 $(BIN):
 	mkdir -p bin
 
-OBJS = $(BUILD)/main.o $(BUILD)/math.o $(BUILD)/game_algorithms.o $(BUILD)/Level.o
+OBJS = $(BUILD)/main.o $(BUILD)/math.o $(BUILD)/game_algorithms.o $(BUILD)/Level.o $(BUILD)/Platform.o $(BUILD)/Window.o
 
 $(BUILD)/math.o: $(BUILD)
 	g++ -g -c $(SRC)/math/math.cpp -o $(BUILD)/math.o
@@ -19,6 +20,12 @@ $(BUILD)/game_algorithms.o: $(BUILD)
 
 $(BUILD)/Level.o: $(BUILD)
 	g++ -g -c $(SRC)/Level.cpp -o $(BUILD)/Level.o
+
+$(BUILD)/Platform.o: $(BUILD)
+	g++ -g -c $(SRC)/Platform.cpp -o $(BUILD)/Platform.o
+
+$(BUILD)/Window.o: $(BUILD)
+	g++ -g -c $(SRC)/Window.cpp -o $(BUILD)/Window.o
 
 $(BUILD)/main.o: $(BUILD)
 	g++ -g -c ./main.cpp -o $(BUILD)/main.o
