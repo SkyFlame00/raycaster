@@ -77,5 +77,15 @@ namespace ray
 	{
 		return SDL_GetTicks64();
 	}
+
+	uint64_t Platform::GetPerformanceCounter()
+	{
+		return static_cast<uint64_t>(SDL_GetPerformanceCounter());
+	}
+
+	uint64_t Platform::GetPerformanceFrequency()
+	{
+		return static_cast<uint64_t>(SDL_GetPerformanceFrequency());
+	}
 }
 

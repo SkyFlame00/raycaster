@@ -1,5 +1,5 @@
 /*
- * Algorithm for both FindIntersectionX and FindIntersectionY:
+ * Algorithm for both WallRaycastX and WallRaycastY:
  * 1. Start at an origin on a level given an angle
  * 2. Go to the next horizontal/vertical line (relative to the origin) and find its intersection with the line made up from the origin and angle
  * 3. Check if the intersection point is within the game world. If it isn't, terminate search
@@ -11,10 +11,10 @@
 #include "math/math.h"
 #include <cmath>
 
-bool FindIntersectionH(const Vec2& origin, float angle, const Level& level, Vec2& o_HPoint, IVec2& o_Cell)
+bool WallRaycastH(const Vec2& origin, float angle, const Level& level, Vec2& o_HPoint, Vec2i& o_Cell)
 {
 	const int32_t cellSize = level.GetCellSize();
-	const IVec2 originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
+	const Vec2i originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
 	const float normAngle = NormalizeAngleRad(angle);
 	const bool bQuadrant1 = ANGLE_0 <= normAngle && normAngle < ANGLE_90;
 	const bool bQuadrant2 = ANGLE_90 <= normAngle && normAngle < ANGLE_180;
@@ -22,7 +22,7 @@ bool FindIntersectionH(const Vec2& origin, float angle, const Level& level, Vec2
 	const bool bQuadrant4 = ANGLE_270 <= normAngle && normAngle < ANGLE_360;
 	const bool bDownwardCast = bQuadrant3 || bQuadrant4;
 	const float deltaY = (bQuadrant1 || bQuadrant2) ? cellSize : -cellSize;
-	const IVec2& worldSize = level.GetSize();
+	const Vec2i& worldSize = level.GetSize();
 	float curY = (originCell.y + ((bQuadrant1 || bQuadrant2) ? 1 : 0)) * cellSize;
 
 	const float M = std::tan(normAngle);
@@ -44,7 +44,7 @@ bool FindIntersectionH(const Vec2& origin, float angle, const Level& level, Vec2
 		float x = slope * (curY - origin.y) + origin.x;
 		int cellX = x / cellSize;
 		int cellY = curY / cellSize - (bDownwardCast ? 1 : 0);
-		IVec2 cell = { cellX, cellY };
+		Vec2i cell = { cellX, cellY };
 
 		o_HPoint = { x, curY };
 		o_Cell = cell;
@@ -61,10 +61,10 @@ bool FindIntersectionH(const Vec2& origin, float angle, const Level& level, Vec2
 	return false;
 }
 
-bool FindIntersectionV(const Vec2& origin, float angle, const Level& level, Vec2& o_VPoint, IVec2& o_Cell)
+bool WallRaycastV(const Vec2& origin, float angle, const Level& level, Vec2& o_VPoint, Vec2i& o_Cell)
 {
 	const int32_t cellSize = level.GetCellSize();
-	const IVec2 originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
+	const Vec2i originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
 	const float normAngle = NormalizeAngleRad(angle);
 	const bool bQuadrant1 = ANGLE_0 <= normAngle && normAngle < ANGLE_90;
 	const bool bQuadrant2 = ANGLE_90 <= normAngle && normAngle < ANGLE_180;
@@ -72,7 +72,7 @@ bool FindIntersectionV(const Vec2& origin, float angle, const Level& level, Vec2
 	const bool bQuadrant4 = ANGLE_270 <= normAngle && normAngle < ANGLE_360;
 	const bool bLeftwardCast = bQuadrant2 || bQuadrant3;
 	const float deltaX = (bQuadrant1 || bQuadrant4) ? cellSize : -cellSize;
-	const IVec2& worldSize = level.GetSize();
+	const Vec2i& worldSize = level.GetSize();
 	float curX = (originCell.x + ((bQuadrant1 || bQuadrant4) ? 1 : 0)) * cellSize;
 
 	const float M = std::tan(normAngle);
@@ -94,7 +94,7 @@ bool FindIntersectionV(const Vec2& origin, float angle, const Level& level, Vec2
 		float y = slope * (curX - origin.x) + origin.y;	
 		int cellX = curX / cellSize - (bLeftwardCast ? 1 : 0);
 		int cellY = y / cellSize;
-		IVec2 cell = { cellX, cellY };
+		Vec2i cell = { cellX, cellY };
 
 		o_VPoint = { curX, y };
 		o_Cell = cell;
@@ -111,12 +111,12 @@ bool FindIntersectionV(const Vec2& origin, float angle, const Level& level, Vec2
 	return false;
 }
 
-bool FindIntersection(const Vec2& origin, float angle, const Level& level, Vec2& o_Point, IVec2& o_Cell)
+bool WallRaycast(const Vec2& origin, float angle, const Level& level, Vec2& o_Point, Vec2i& o_Cell)
 {
 	Vec2 hPoint, vPoint;
-	IVec2 hCell, vCell;
-	bool bHIntersection = FindIntersectionH(origin, angle, level, hPoint, hCell);
-	bool bVIntersection = FindIntersectionV(origin, angle, level, vPoint, vCell);
+	Vec2i hCell, vCell;
+	bool bHIntersection = WallRaycastH(origin, angle, level, hPoint, hCell);
+	bool bVIntersection = WallRaycastV(origin, angle, level, vPoint, vCell);
 	bool found = bHIntersection || bVIntersection;
 
 	if (bHIntersection || bVIntersection)

@@ -7,18 +7,18 @@
 class Level
 {
 public:
-	Level(const char* data, const IVec2& size, int32_t cellSize);
+	Level(const char* data, const Vec2i& size, int32_t cellSize);
 
-	bool IsCellWithinBounds(const IVec2& cell) const;
-	bool IsSolidWall(const IVec2& cell) const;
+	bool IsCellWithinBounds(const Vec2i& cell) const;
+	bool IsSolidWall(const Vec2i& cell) const;
 	bool IsSolidWall(const Vec2& pos) const;
 	char GetAt(int x, int y) const;
-	IVec2 GetSize() const { return m_Size; }
+	Vec2i GetSize() const { return m_Size; }
 	int32_t GetCellSize() const { return m_CellSize; }
 
 private:
 	std::string m_Data;
-	IVec2 m_Size;
+	Vec2i m_Size;
 	int32_t m_CellSize;
 };
 

@@ -82,7 +82,7 @@ void Render(Uint32* framebuffer)
 	// TODO: make a diagram and put it in raycasting.md
 	float halfWidth = SCREEN_WIDTH / 2.0f;
 	float halfFOV = g_FOV / 2.0f;
-	float halfFOVTan = tanf(DegreesToRadians(halfFOV));
+	float halfFOVTan = tanf(ToRadians(halfFOV));
 	if (IsZero(halfFOVTan)) // TODO: handle differently
 		return;
 	float distToProjPlane = halfWidth / halfFOVTan;
@@ -95,13 +95,13 @@ void Render(Uint32* framebuffer)
 		// https://www.scottsmitelli.com/articles/we-can-fix-your-raycaster/
 		float xplane = halfWidth - strip;
 		float localAngleRad = atanf(xplane / distToProjPlane); // atan2f isn't needed since we use exactly I and IV quadrants
-		float worldAngleRad = localAngleRad + DegreesToRadians(g_Player.m_ViewAngleDeg);
+		float worldAngleRad = localAngleRad + ToRadians(g_Player.m_ViewAngleDeg);
 		
 		// find intersection points
 		Vec2 hPoint, vPoint;
-		IVec2 hCell, vCell;
-		bool hasHorIntersection = FindIntersectionH(g_Player.m_Pos, worldAngleRad, *g_Level, hPoint, hCell);
-		bool hasVerIntersection = FindIntersectionV(g_Player.m_Pos, worldAngleRad, *g_Level, vPoint, vCell);
+		Vec2i hCell, vCell;
+		bool hasHorIntersection = WallRaycastH(g_Player.m_Pos, worldAngleRad, *g_Level, hPoint, hCell);
+		bool hasVerIntersection = WallRaycastV(g_Player.m_Pos, worldAngleRad, *g_Level, vPoint, vCell);
 		if (!hasHorIntersection && !hasVerIntersection)
 		{
 			// sth went wrong: assert and exit
@@ -232,7 +232,7 @@ void PhysicsFrame(float dt)
 	{
 		float speed = g_Player.m_Speed;
 		float normAngleDeg = NormalizeAngle(g_Player.m_MoveAngleDeg);
-		float angleRad = DegreesToRadians(normAngleDeg);
+		float angleRad = ToRadians(normAngleDeg);
 		float dx = speed * cosf(angleRad);
 		float dy = speed * sinf(angleRad);
 		Vec2 pos = g_Player.m_Pos;
@@ -245,15 +245,15 @@ void PhysicsFrame(float dt)
 	if (!IsZero(speed))
 	{
 		float normAngleDeg = NormalizeAngle(g_Player.m_MoveAngleDeg);
-		float angleRad = DegreesToRadians(normAngleDeg);
+		float angleRad = ToRadians(normAngleDeg);
 		float dx = speed * cosf(angleRad);
 		float dy = speed * sinf(angleRad);
 		Vec2 pos = g_Player.m_Pos;
 		Vec2 projPoint = { pos.x + dx, pos.y + dy };
 		Vec2 wallPoint;
-		IVec2 _wallCell;
+		Vec2i _wallCell;
 		
-		bool found = FindIntersection(pos, angleRad, *g_Level, wallPoint, _wallCell);
+		bool found = WallRaycast(pos, angleRad, *g_Level, wallPoint, _wallCell);
 		if (!found)
 		{
 			// report an error
@@ -288,8 +288,8 @@ void PhysicsFrame(float dt)
 
 			bool bPrevSolidWall = g_Level->IsSolidWall(pos);
 			int cellSize = g_Level->GetCellSize();
-			IVec2 oldCell = { (int)(pos.x / cellSize), (int)(pos.y / cellSize) };
-			IVec2 newCell = { (int)(g_Player.m_Pos.x / cellSize), (int)(g_Player.m_Pos.y / cellSize) };
+			Vec2i oldCell = { (int)(pos.x / cellSize), (int)(pos.y / cellSize) };
+			Vec2i newCell = { (int)(g_Player.m_Pos.x / cellSize), (int)(g_Player.m_Pos.y / cellSize) };
 
 			bool bSolidWall = g_Level->IsSolidWall(g_Player.m_Pos);
 			if (bSolidWall)
@@ -309,21 +309,26 @@ int main()
 		return 1;
 
 	bool running = true;
-	//int frame = 0;
+	int frame = 0;
 
 	char levelData[LEVEL_ROWS*LEVEL_COLS];
-	IVec2 levelSize = { LEVEL_COLS * g_CellSize, LEVEL_ROWS * g_CellSize };
+	Vec2i levelSize = { LEVEL_COLS * g_CellSize, LEVEL_ROWS * g_CellSize };
 	MirrorLevelString(g_RawLevelData, levelData);
 	g_Level = new Level(levelData, levelSize, (int32_t)g_CellSize);
 
 	SpawnPlayer(g_Player, LEVEL_ROWS, LEVEL_COLS);
 
+	float targetFPS = 18.0f;
+	uint64_t targetFrameDur = (uint64_t)(1000.0f / targetFPS);
 	uint64_t lastTime = platform->GetElapsedMs();
 	while (running)
 	{
-		Uint32 currentTime = platform->GetElapsedMs();
+		uint64_t currentTime = platform->GetElapsedMs();
 		float dt = (currentTime - lastTime) / 1000.0f;
+		uint64_t diff = currentTime - lastTime;
 		lastTime = currentTime;
+
+		uint64_t start = platform->GetPerformanceCounter();
 
 		HandleInput(dt);
 		PhysicsFrame(dt);
@@ -342,11 +347,24 @@ int main()
 
 		window->Draw();
 
-		//frame++;
-		//SDL_Delay(16); // ~60 FPS
+		uint64_t end = platform->GetPerformanceCounter();
+
+		frame++;
+
+		uint64_t perf = platform->GetElapsedMs() - lastTime;
+
+		//std::printf("FPS: %.2f\n", 1000.0f / (float)diff);
+		double p = (double)(end - start) / (double)platform->GetPerformanceFrequency();
+		std::printf("FPS: %.10f\n", 1.0f/p);
+
+		if (perf < targetFrameDur)
+		{
+			SDL_Delay(targetFrameDur - perf);
+		}
 	}
 
 	delete g_Level; // TODO: remove raw pointes
 
 	return 0;
 }
+

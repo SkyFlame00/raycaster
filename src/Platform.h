@@ -16,6 +16,8 @@ namespace ray
 		static std::shared_ptr<Platform> CreatePlatform();
 		std::shared_ptr<Window> CreateWindow(const int32_t width, const int32_t height);
 		uint64_t GetElapsedMs();
+		uint64_t GetPerformanceCounter();
+		uint64_t GetPerformanceFrequency();
 
 	private:
 		static bool m_IsInitialized;

@@ -12,22 +12,22 @@ $(BIN):
 
 OBJS = $(BUILD)/main.o $(BUILD)/math.o $(BUILD)/game_algorithms.o $(BUILD)/Level.o $(BUILD)/Platform.o $(BUILD)/Window.o
 
-$(BUILD)/math.o: $(BUILD)
+$(BUILD)/math.o: $(BUILD) $(SRC)/math/math.cpp
 	g++ -g -c $(SRC)/math/math.cpp -o $(BUILD)/math.o
 
-$(BUILD)/game_algorithms.o: $(BUILD)
+$(BUILD)/game_algorithms.o: $(BUILD) $(SRC)/game_algorithms.cpp
 	g++ -g -c $(SRC)/game_algorithms.cpp -o $(BUILD)/game_algorithms.o
 
-$(BUILD)/Level.o: $(BUILD)
+$(BUILD)/Level.o: $(BUILD) $(SRC)/Level.cpp
 	g++ -g -c $(SRC)/Level.cpp -o $(BUILD)/Level.o
 
-$(BUILD)/Platform.o: $(BUILD)
+$(BUILD)/Platform.o: $(BUILD) $(SRC)/Platform.cpp
 	g++ -g -c $(SRC)/Platform.cpp -o $(BUILD)/Platform.o
 
-$(BUILD)/Window.o: $(BUILD)
+$(BUILD)/Window.o: $(BUILD) $(SRC)/Window.cpp
 	g++ -g -c $(SRC)/Window.cpp -o $(BUILD)/Window.o
 
-$(BUILD)/main.o: $(BUILD)
+$(BUILD)/main.o: $(BUILD) main.cpp
 	g++ -g -c ./main.cpp -o $(BUILD)/main.o
 
 # $^ - for prerequisites

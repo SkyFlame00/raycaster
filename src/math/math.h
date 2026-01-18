@@ -36,24 +36,24 @@ struct Vec2
 	}
 };
 
-struct IVec2
+struct Vec2i
 {
 	int32_t x, y;
 	
-	IVec2 operator+(const IVec2& other) const
+	Vec2i operator+(const Vec2i& other) const
 	{
 		return {x + other.x, y + other.y};
 	}
 
-	IVec2 operator-(const IVec2& other) const
+	Vec2i operator-(const Vec2i& other) const
 	{
 		return {x - other.x, y - other.y};
 	}
 };
 
-float DegreesToRadians(float deg);
+float ToRadians(float deg);
 
-float RadiansToDegrees(float rad);
+float ToDegrees(float rad);
 
 float Distance(const Vec2& v1, const Vec2& v2);
 

@@ -1,11 +1,11 @@
 #include "math.h"
 
-float DegreesToRadians(float deg)
+float ToRadians(float deg)
 {
 	return deg * (M_PI / 180.0f);
 }
 
-float RadiansToDegrees(float rad)
+float ToDegrees(float rad)
 {
 	return rad * (180.0f / M_PI);
 }
