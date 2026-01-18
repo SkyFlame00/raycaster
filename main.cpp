@@ -75,6 +75,22 @@ void SpawnPlayer(Player& player, int rows, int cols)
 	std::cout << "Player was not found in the level";
 }
  
+int8_t ShadeColor(int8_t color, float dist)
+{
+	const float maxDist = 1024.0f;
+	const int8_t colorShift = 100;
+
+	const float factor = std::min(dist, maxDist) / maxDist;
+	const int8_t shadedColor = std::max(color - (int8_t)(factor * colorShift), 0);
+
+	return shadedColor;
+}
+
+int32_t ExpandToRgba(int8_t value)
+{
+	return (0xFF000000 | (value << 16) | (value << 8) | value);
+}
+
 void Render(Uint32* framebuffer)
 {
 	// The distance to the projection plane is determined by the FOV and screen width
@@ -161,9 +177,13 @@ void Render(Uint32* framebuffer)
 		// draw the wall
 		for (int i = ceilingHeightPx; i < ceilingHeightPx + wallHeightPx; i++)
 		{
-			Uint32 color = 0xFFD6D6D6;
-			color = hCase ? 0xFFA1A1A1 : 0xFF696969;
-			framebuffer[i * SCREEN_WIDTH + strip] = color;
+			//Uint32 color = 0xFFD6D6D6;
+			//color = hCase ? 0xFFA1A1A1 : 0xFF696969;
+			//uint8_t color = hCase ? 100 : 125;
+			uint8_t color = 100;
+			uint8_t shadedColor = ShadeColor(color, correctedDist);
+			uint32_t expandedColor = ExpandToRgba(shadedColor);
+			framebuffer[i * SCREEN_WIDTH + strip] = expandedColor;
 		}
 
 		// draw the floor
