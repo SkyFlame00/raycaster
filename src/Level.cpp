@@ -16,7 +16,8 @@ bool Level::IsCellWithinBounds(const Vec2i& cell) const
 
 bool Level::IsSolidWall(const Vec2i& cell) const
 {
-	return GetAt(cell.x, cell.y) == '1';
+	const char wallType = GetAt(cell.x, cell.y);
+	return wallType == '1' || wallType == '2';
 }
 
 bool Level::IsSolidWall(const Vec2& pos) const

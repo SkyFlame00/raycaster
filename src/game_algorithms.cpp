@@ -1,5 +1,5 @@
 /*
- * Algorithm for both WallRaycastX and WallRaycastY:
+ * Algorithm for both WallRaycastH and WallRaycastV:
  * 1. Start at an origin on a level given an angle
  * 2. Go to the next horizontal/vertical line (relative to the origin) and find its intersection with the line made up from the origin and angle
  * 3. Check if the intersection point is within the game world. If it isn't, terminate search

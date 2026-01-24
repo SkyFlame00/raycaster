@@ -1,4 +1,4 @@
-#CFLAGS = -g -fdiagnostics-color=always
+CFLAGS = -g -fdiagnostics-color=always -Iexternal -Isrc
 BUILD = build
 SRC = src
 BIN = bin
@@ -10,35 +10,44 @@ $(BUILD):
 $(BIN):
 	mkdir -p bin
 
-OBJS = $(BUILD)/main.o $(BUILD)/math.o $(BUILD)/game_algorithms.o $(BUILD)/Level.o $(BUILD)/Platform.o $(BUILD)/Window.o
+OBJS = $(BUILD)/main.o \
+	   $(BUILD)/math.o \
+	   $(BUILD)/game_algorithms.o \
+	   $(BUILD)/Level.o \
+	   $(BUILD)/Platform.o \
+	   $(BUILD)/Window.o \
+	   $(BUILD)/stb_image_impl.o
 
 $(BUILD)/math.o: $(BUILD) $(SRC)/math/math.cpp
-	g++ -g -c $(SRC)/math/math.cpp -o $(BUILD)/math.o
+	g++ $(CFLAGS) -c $(SRC)/math/math.cpp -o $(BUILD)/math.o
 
 $(BUILD)/game_algorithms.o: $(BUILD) $(SRC)/game_algorithms.cpp
-	g++ -g -c $(SRC)/game_algorithms.cpp -o $(BUILD)/game_algorithms.o
+	g++ $(CFLAGS) -c $(SRC)/game_algorithms.cpp -o $(BUILD)/game_algorithms.o
 
 $(BUILD)/Level.o: $(BUILD) $(SRC)/Level.cpp
-	g++ -g -c $(SRC)/Level.cpp -o $(BUILD)/Level.o
+	g++ $(CFLAGS) -c $(SRC)/Level.cpp -o $(BUILD)/Level.o
 
 $(BUILD)/Platform.o: $(BUILD) $(SRC)/Platform.cpp
-	g++ -g -c $(SRC)/Platform.cpp -o $(BUILD)/Platform.o
+	g++ $(CFLAGS) -c $(SRC)/Platform.cpp -o $(BUILD)/Platform.o
 
 $(BUILD)/Window.o: $(BUILD) $(SRC)/Window.cpp
-	g++ -g -c $(SRC)/Window.cpp -o $(BUILD)/Window.o
+	g++ $(CFLAGS) -c $(SRC)/Window.cpp -o $(BUILD)/Window.o
+
+$(BUILD)/stb_image_impl.o: $(BUILD) $(SRC)/stb_image_impl.cpp
+	g++ $(CFLAGS) -c $(SRC)/stb_image_impl.cpp -o $(BUILD)/stb_image_impl.o
 
 $(BUILD)/main.o: $(BUILD) main.cpp
-	g++ -g -c ./main.cpp -o $(BUILD)/main.o
+	g++ $(CFLAGS) -c ./main.cpp -o $(BUILD)/main.o
 
 # $^ - for prerequisites
 program: $(OBJS)
-	g++ -g $^ -o $(BIN)/ray -lSDL2
+	g++ $(CFLAGS) $^ -o $(BIN)/ray -lSDL2
 
 main_release:
 	g++ main.cpp -o $(BIN)/ray_release -lSDL2
 
 math_test: math_test.cpp
-	g++ -g math_test.cpp -o $(BIN)/math_test
+	g++ $(CFLAGS) math_test.cpp -o $(BIN)/math_test
 
 tags:
 	ctags -R .

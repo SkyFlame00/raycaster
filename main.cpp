@@ -4,13 +4,16 @@
 #include <cstdio>
 #include <algorithm>
 #include <memory>
+#include <cassert>
 
-#include "./src/constants.h"
-#include "./src/Platform.h"
-#include "./src/Window.h"
-#include "./src/math/math.h"
-#include "./src/game_algorithms.h"
-#include "./src/Level.h"
+#include <stb/stb_image.h>
+
+#include "constants.h"
+#include "Platform.h"
+#include "Window.h"
+#include "math/math.h"
+#include "game_algorithms.h"
+#include "Level.h"
 
 const char* g_RawLevelData = 
                     "111111111111111111"\
@@ -154,13 +157,21 @@ void Render(Uint32* framebuffer)
 		}
 
 		// Make a fish eye effect correction
-		const float wallHeight = 80.0f;
 		float correction = cosf(localAngleRad);
 		float correctedDist = correction * dist;
 		if (NearZero(correctedDist))
 			correctedDist = 1.0f;
-		float heightRatio = wallHeight / correctedDist;
+
+		// proj wall height / dist of player to proj plane = wall height / dist to wall
+		// dist of player to proj plane = 1
+		// proj wall height = wall height / dist to wall
+		const float distToProjPlane = 1.0f;
+		const float wallHeight = 80.0f;
+		float heightRatio = (wallHeight / correctedDist) * distToProjPlane;
 		heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
+
+		const float baseHeight = 80.0f;
+
 
 		// TODO: round the result of heightRatio*SCREEN_HEIGHT if it's very close to the nearest integer. At the moment, some strips might differ in height by a pixel if we look at a wall perpendicularly. It's due to minuscule difference between those numbers
 		int wallHeightPx = std::round(heightRatio * SCREEN_HEIGHT);
@@ -341,6 +352,14 @@ int main()
 	float targetFPS = 18.0f;
 	uint64_t targetFrameDur = (uint64_t)(1000.0f / targetFPS);
 	uint64_t lastTime = platform->GetElapsedMs();
+
+	// load test image
+	int32_t imgWidth;
+	int32_t imgHeight;
+	int32_t nrChannels;
+	uint8_t* imgData = stbi_load("./assets/textures/bkred_1.png", &imgWidth, &imgHeight, &nrChannels, 0);
+	assert(imgData);
+
 	while (running)
 	{
 		uint64_t currentTime = platform->GetElapsedMs();
@@ -355,6 +374,7 @@ int main()
 
 		uint32_t* framebuffer = window->GetFramebuffer();
 
+
 		for (int y = 0; y < SCREEN_HEIGHT; y++)
 		{
 			for (int x = 0; x < SCREEN_WIDTH; x++)
@@ -364,6 +384,23 @@ int main()
 		}
 
 		Render(framebuffer);
+
+		for (int32_t y = 0; y < imgHeight; y++)
+		{
+			for (int32_t x = 0; x < imgWidth; x++)
+			{
+				uint32_t offset = (y * imgWidth + x) * nrChannels;
+				uint8_t r = imgData[offset];
+				uint8_t g = imgData[offset+1];
+				uint8_t b = imgData[offset+2];
+				uint8_t a = imgData[offset+3];
+
+				int32_t color = (a << 24) | (r << 16) | (g << 8) | b;
+				//uint32_t color = 0xFF000000 | (b << 16) | (g << 8) | r;
+
+				framebuffer[y * SCREEN_WIDTH + x] = color;
+			}
+		}
 
 		window->Draw();
 
