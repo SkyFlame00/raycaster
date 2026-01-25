@@ -47,6 +47,10 @@ public:
 const int g_CellSize = 64; // TODO: remove
 Player g_Player;
 int g_FOV = 60;
+uint8_t* g_ImgData = nullptr; // TODO: remove
+uint32_t g_ImgWidth;
+uint32_t g_ImgHeight;
+uint32_t g_ImgNrChannels;
 
 void MirrorLevelString(const char* src, char* dst)
 {
@@ -92,6 +96,55 @@ int8_t ShadeColor(int8_t color, float dist)
 int32_t ExpandToRgba(int8_t value)
 {
 	return (0xFF000000 | (value << 16) | (value << 8) | value);
+}
+
+uint32_t TextureSample(float normX, float normY)
+{
+	uint32_t x = normX * g_ImgWidth;
+	uint32_t y = normY * g_ImgHeight;
+	uint32_t offset = (y * g_ImgWidth + x) * g_ImgNrChannels;
+	uint8_t r = g_ImgData[offset + 0];
+	uint8_t g = g_ImgData[offset + 1];
+	uint8_t b = g_ImgData[offset + 2];
+	uint8_t a = g_ImgData[offset + 3];
+	uint32_t color = (a << 24) | (r << 16) | (g << 8) | b;
+
+	return color;
+}
+
+int g_Test = 1;
+void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoint, const Vec2& vPoint, bool hCase, int32_t strip)
+{
+	// if texture should be stretched in y-dimension (height), then we need to determine how we should stretch it in x-dimension
+	float texHeightRatio = g_ImgHeight / (float)g_ImgWidth;
+	float texWidthUnits = g_CellSize / texHeightRatio;
+	uint32_t wallHeightPx = std::round(SCREEN_HEIGHT * heightRatio); // to get the same wallHeightPx as in Render to avoid artifacts
+	int32_t offset = (SCREEN_HEIGHT - (int32_t)wallHeightPx) / 2;
+	uint32_t beginY = offset >= 0 ? offset : 0;
+	uint32_t endY = std::min(beginY + wallHeightPx, (uint32_t)SCREEN_HEIGHT);
+	float textureX;
+	if (hCase)
+	{
+		textureX = fmodf(hPoint.x, texWidthUnits) / texWidthUnits;
+	}
+	else
+	{
+		textureX = fmodf(vPoint.y, texWidthUnits) / texWidthUnits;
+	}
+	
+	for (int32_t i = beginY; i < endY; i++)
+	{
+		float textureY = (i - offset) / (float)wallHeightPx;
+		uint32_t color = TextureSample(textureX, textureY);
+
+		if (0 && i==0)
+		{
+			std::printf("s: %d, c: %x, off: %d, (%u, %u), (%.10f, %.10f), wh=%u, hr=%.10f\n",
+					strip, color, offset, beginY, endY, textureX, textureY, wallHeightPx, heightRatio);
+		}
+
+		framebuffer[i * SCREEN_WIDTH + strip] = color;
+	}
 }
 
 void Render(Uint32* framebuffer)
@@ -159,6 +212,8 @@ void Render(Uint32* framebuffer)
 		// Make a fish eye effect correction
 		float correction = cosf(localAngleRad);
 		float correctedDist = correction * dist;
+		if (1)
+			correctedDist = std::round(correctedDist);
 		if (NearZero(correctedDist))
 			correctedDist = 1.0f;
 
@@ -168,9 +223,16 @@ void Render(Uint32* framebuffer)
 		const float distToProjPlane = 1.0f;
 		const float wallHeight = 80.0f;
 		float heightRatio = (wallHeight / correctedDist) * distToProjPlane;
+		float heightRatioRaw = heightRatio;
 		heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
 
 		const float baseHeight = 80.0f;
+
+		if (1)
+		{
+			std::printf("s: %d, d: %.10f, c: %.10f, cd: %.10f\n",
+					strip, dist, correction, correctedDist);
+		}
 
 
 		// TODO: round the result of heightRatio*SCREEN_HEIGHT if it's very close to the nearest integer. At the moment, some strips might differ in height by a pixel if we look at a wall perpendicularly. It's due to minuscule difference between those numbers
@@ -186,16 +248,19 @@ void Render(Uint32* framebuffer)
 		}
 
 		// draw the wall
-		for (int i = ceilingHeightPx; i < ceilingHeightPx + wallHeightPx; i++)
-		{
-			//Uint32 color = 0xFFD6D6D6;
-			//color = hCase ? 0xFFA1A1A1 : 0xFF696969;
-			//uint8_t color = hCase ? 100 : 125;
-			uint8_t color = 100;
-			uint8_t shadedColor = ShadeColor(color, correctedDist);
-			uint32_t expandedColor = ExpandToRgba(shadedColor);
-			framebuffer[i * SCREEN_WIDTH + strip] = expandedColor;
-		}
+		//for (int i = ceilingHeightPx; i < ceilingHeightPx + wallHeightPx; i++)
+		//{
+		//	//Uint32 color = 0xFFD6D6D6;
+		//	//color = hCase ? 0xFFA1A1A1 : 0xFF696969;
+		//	//uint8_t color = hCase ? 100 : 125;
+
+		//	uint8_t color = 100;
+		//	uint8_t shadedColor = ShadeColor(color, correctedDist);
+		//	uint32_t expandedColor = ExpandToRgba(shadedColor);
+		//	framebuffer[i * SCREEN_WIDTH + strip] = expandedColor;
+		//}
+
+		TextureMapStrip(framebuffer, heightRatioRaw, hPoint, vPoint, hCase, strip);
 
 		// draw the floor
 		for (int i = ceilingHeightPx + wallHeightPx; i < SCREEN_HEIGHT; i++)
@@ -360,6 +425,11 @@ int main()
 	uint8_t* imgData = stbi_load("./assets/textures/bkred_1.png", &imgWidth, &imgHeight, &nrChannels, 0);
 	assert(imgData);
 
+	g_ImgData = imgData;
+	g_ImgWidth = imgWidth;
+	g_ImgHeight = imgHeight;
+	g_ImgNrChannels = nrChannels;
+
 	while (running)
 	{
 		uint64_t currentTime = platform->GetElapsedMs();
@@ -385,20 +455,23 @@ int main()
 
 		Render(framebuffer);
 
-		for (int32_t y = 0; y < imgHeight; y++)
+		if (0)
 		{
-			for (int32_t x = 0; x < imgWidth; x++)
+			for (int32_t y = 0; y < imgHeight; y++)
 			{
-				uint32_t offset = (y * imgWidth + x) * nrChannels;
-				uint8_t r = imgData[offset];
-				uint8_t g = imgData[offset+1];
-				uint8_t b = imgData[offset+2];
-				uint8_t a = imgData[offset+3];
+				for (int32_t x = 0; x < imgWidth; x++)
+				{
+					uint32_t offset = (y * imgWidth + x) * nrChannels;
+					uint8_t r = imgData[offset];
+					uint8_t g = imgData[offset+1];
+					uint8_t b = imgData[offset+2];
+					uint8_t a = imgData[offset+3];
 
-				int32_t color = (a << 24) | (r << 16) | (g << 8) | b;
-				//uint32_t color = 0xFF000000 | (b << 16) | (g << 8) | r;
+					int32_t color = (a << 24) | (r << 16) | (g << 8) | b;
+					//uint32_t color = 0xFF000000 | (b << 16) | (g << 8) | r;
 
-				framebuffer[y * SCREEN_WIDTH + x] = color;
+					framebuffer[y * SCREEN_WIDTH + x] = color;
+				}
 			}
 		}
 
@@ -420,6 +493,7 @@ int main()
 		}
 	}
 
+	stbi_image_free(imgData);
 	delete g_Level; // TODO: remove raw pointes
 
 	return 0;
