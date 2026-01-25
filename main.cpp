@@ -112,8 +112,23 @@ uint32_t TextureSample(float normX, float normY)
 	return color;
 }
 
-int g_Test = 1;
-void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoint, const Vec2& vPoint, bool hCase, int32_t strip)
+uint32_t ApplyBrightness(uint32_t color, float intensity)
+{
+	int8_t a = (uint8_t)(color >> 24);
+	int8_t r = (uint8_t)(color >> 16);
+	int8_t g = (uint8_t)(color >> 8);
+	int8_t b = (uint8_t)color;
+
+	r = std::clamp((int)(r * intensity), 0, 255);
+	g = std::clamp((int)(g * intensity), 0, 255);
+	b = std::clamp((int)(b * intensity), 0, 255);
+
+	uint32_t result = (a << 24) | (r << 16) | (g << 8) | b;
+
+	return result;
+}
+
+void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoint, const Vec2& vPoint, bool hCase, int32_t strip, float dist)
 {
 	// if texture should be stretched in y-dimension (height), then we need to determine how we should stretch it in x-dimension
 	float texHeightRatio = g_ImgHeight / (float)g_ImgWidth;
@@ -139,9 +154,24 @@ void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoin
 
 		if (0 && i==0)
 		{
+			// This is a test on the wall/texture "teeth"
 			std::printf("s: %d, c: %x, off: %d, (%u, %u), (%.10f, %.10f), wh=%u, hr=%.10f\n",
 					strip, color, offset, beginY, endY, textureX, textureY, wallHeightPx, heightRatio);
 		}
+
+		if (hCase)
+		{
+			// apply horizontal wall shading
+			//color = ApplyBrightness(color, -25);
+		}
+
+		int8_t maxShade = 90;
+		float maxDist = 1024.0f;
+		float factor = std::min(dist, maxDist) / maxDist;
+		factor *= 1.4f;
+		//int8_t intensity = maxShade * factor;
+		float intensity = 1.0f - factor;
+		color = ApplyBrightness(color, intensity);
 
 		framebuffer[i * SCREEN_WIDTH + strip] = color;
 	}
@@ -213,7 +243,7 @@ void Render(Uint32* framebuffer)
 		float correction = cosf(localAngleRad);
 		float correctedDist = correction * dist;
 		if (1)
-			correctedDist = std::round(correctedDist);
+			correctedDist = std::round(correctedDist); // round to prevent the "teeth" (a texel issue)
 		if (NearZero(correctedDist))
 			correctedDist = 1.0f;
 
@@ -228,8 +258,9 @@ void Render(Uint32* framebuffer)
 
 		const float baseHeight = 80.0f;
 
-		if (1)
+		if (0)
 		{
+			// This is a test on the wall/texture "teeth"
 			std::printf("s: %d, d: %.10f, c: %.10f, cd: %.10f\n",
 					strip, dist, correction, correctedDist);
 		}
@@ -260,7 +291,7 @@ void Render(Uint32* framebuffer)
 		//	framebuffer[i * SCREEN_WIDTH + strip] = expandedColor;
 		//}
 
-		TextureMapStrip(framebuffer, heightRatioRaw, hPoint, vPoint, hCase, strip);
+		TextureMapStrip(framebuffer, heightRatioRaw, hPoint, vPoint, hCase, strip, correctedDist);
 
 		// draw the floor
 		for (int i = ceilingHeightPx + wallHeightPx; i < SCREEN_HEIGHT; i++)
@@ -419,10 +450,14 @@ int main()
 	uint64_t lastTime = platform->GetElapsedMs();
 
 	// load test image
+	//const char* texturePath = "./assets/textures/bkred_1.png";
+	//const char* texturePath = "./assets/textures/brik_3.png";
+	//const char* texturePath = "./assets/textures/brks_1.png";
+	const char* texturePath = "./assets/textures/brks_00.png";
 	int32_t imgWidth;
 	int32_t imgHeight;
 	int32_t nrChannels;
-	uint8_t* imgData = stbi_load("./assets/textures/bkred_1.png", &imgWidth, &imgHeight, &nrChannels, 0);
+	uint8_t* imgData = stbi_load(texturePath, &imgWidth, &imgHeight, &nrChannels, 0);
 	assert(imgData);
 
 	g_ImgData = imgData;
