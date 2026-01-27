@@ -98,15 +98,15 @@ int32_t ExpandToRgba(int8_t value)
 	return (0xFF000000 | (value << 16) | (value << 8) | value);
 }
 
-uint32_t TextureSample(float normX, float normY)
+uint32_t TextureSample(uint8_t* imgData, uint32_t imgWidth, uint32_t imgHeight, uint32_t imgNrChannels, float normX, float normY)
 {
-	uint32_t x = normX * g_ImgWidth;
-	uint32_t y = normY * g_ImgHeight;
-	uint32_t offset = (y * g_ImgWidth + x) * g_ImgNrChannels;
-	uint8_t r = g_ImgData[offset + 0];
-	uint8_t g = g_ImgData[offset + 1];
-	uint8_t b = g_ImgData[offset + 2];
-	uint8_t a = g_ImgData[offset + 3];
+	uint32_t x = normX * imgWidth;
+	uint32_t y = normY * imgHeight;
+	uint32_t offset = (y * imgWidth + x) * imgNrChannels;
+	uint8_t r = imgData[offset + 0];
+	uint8_t g = imgData[offset + 1];
+	uint8_t b = imgData[offset + 2];
+	uint8_t a = imgData[offset + 3];
 	uint32_t color = (a << 24) | (r << 16) | (g << 8) | b;
 
 	return color;
@@ -150,7 +150,7 @@ void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoin
 	for (int32_t i = beginY; i < endY; i++)
 	{
 		float textureY = (i - offset) / (float)wallHeightPx;
-		uint32_t color = TextureSample(textureX, textureY);
+		uint32_t color = TextureSample(g_ImgData, g_ImgWidth, g_ImgHeight, g_ImgNrChannels, textureX, textureY);
 
 		if (0 && i==0)
 		{
@@ -175,6 +175,22 @@ void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoin
 
 		framebuffer[i * SCREEN_WIDTH + strip] = color;
 	}
+}
+
+uint8_t* g_FloorImgData = nullptr;
+uint32_t g_FloorImgWidth;
+uint32_t g_FloorImgHeight;
+uint32_t g_FloorImgNrChannels;
+uint32_t GetFloorColor(float worldX, float worldY)
+{
+	float texHeightRatio = g_FloorImgHeight / (float)g_FloorImgWidth;
+	float texWidthUnits = g_CellSize / texHeightRatio;
+	float textureX = fmodf((float)worldX, texWidthUnits) / texWidthUnits;
+	float textureY = fmodf((float)worldY, g_CellSize) / (float)g_CellSize;
+
+	uint32_t color = TextureSample(g_FloorImgData, g_FloorImgWidth, g_FloorImgHeight, g_FloorImgNrChannels, textureX, textureY);
+
+	return color;
 }
 
 void Render(Uint32* framebuffer)
@@ -296,7 +312,38 @@ void Render(Uint32* framebuffer)
 		// draw the floor
 		for (int i = ceilingHeightPx + wallHeightPx; i < SCREEN_HEIGHT; i++)
 		{
-			Uint32 color = 0xFF404040;
+			//Uint32 color = 0xFF404040;
+			//framebuffer[i * SCREEN_WIDTH + strip] = color;
+
+
+			float halfWallHeight = wallHeight / 2.0f;
+			float playerHeight = halfWallHeight;
+			float rowDiff = i - SCREEN_HEIGHT / 2;
+
+			// Vertical FOV is unknown but given wallHeight and the distance at which the wall exactly covers the screen's height (which is the same as wallHeight), we can find it
+			//float halfVFOV = atanf(halfWallHeight / wallHeight);
+			//float halfProjPlaneHeight = tanf(halfVFOV) / distToProjPlane;
+			float halfProjPlaneHeight = (halfWallHeight / wallHeight) / distToProjPlane;
+			float heightPerPixel = halfProjPlaneHeight / (SCREEN_HEIGHT / 2);
+			float distToRow = rowDiff * heightPerPixel;
+			
+			// https://permadi.com/1996/05/ray-casting-tutorial-12/
+			// distToFloor / distToProjPlane = playerHeight / rowDiff
+			float distToFloor = (playerHeight / distToRow) * distToProjPlane; // dist from player's feet to point P on floor
+			
+			float hyp = distToFloor / cosf(localAngleRad);
+
+			float dx = hyp * cosf(worldAngleRad);
+			float dy = hyp * sinf(worldAngleRad);
+
+			float playerX = g_Player.m_Pos.x;
+			float playerY = g_Player.m_Pos.y;
+
+			float worldX = playerX + dx;
+			float worldY = playerY + dy;
+
+			uint32_t color = GetFloorColor(worldX, worldY);
+
 			framebuffer[i * SCREEN_WIDTH + strip] = color;
 		}
 	}
@@ -464,6 +511,17 @@ int main()
 	g_ImgWidth = imgWidth;
 	g_ImgHeight = imgHeight;
 	g_ImgNrChannels = nrChannels;
+
+	//const char* floorTexturePath = "./assets/textures/wood1.png";
+	const char* floorTexturePath = "./assets/textures/wall52_1.png";
+	//g_FloorImgData = stbi_load(floorTexturePath, &g_FloorImgWidth, &g_FloorImgHeight, &g_FloorImgNrChannels, 0);
+	imgData = stbi_load(floorTexturePath, &imgWidth, &imgHeight, &nrChannels, 0);
+	assert(imgData);
+
+	g_FloorImgData = imgData;
+	g_FloorImgWidth = imgWidth;
+	g_FloorImgHeight = imgHeight;
+	g_FloorImgNrChannels = nrChannels;
 
 	while (running)
 	{
