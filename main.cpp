@@ -15,6 +15,76 @@
 #include "game_algorithms.h"
 #include "Level.h"
 
+
+const char* g_RawLevelData2 =
+					"11111"\
+					"1   1"\
+					"1 P 1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"1   1"\
+					"11111";
+
 const char* g_RawLevelData = 
                     "111111111111111111"\
                     "1P  1            1"\
@@ -114,18 +184,32 @@ uint32_t TextureSample(uint8_t* imgData, uint32_t imgWidth, uint32_t imgHeight, 
 
 uint32_t ApplyBrightness(uint32_t color, float intensity)
 {
-	int8_t a = (uint8_t)(color >> 24);
-	int8_t r = (uint8_t)(color >> 16);
-	int8_t g = (uint8_t)(color >> 8);
-	int8_t b = (uint8_t)color;
+	uint8_t a = (uint8_t)(color >> 24);
+	uint8_t r = (uint8_t)(color >> 16);
+	uint8_t g = (uint8_t)(color >> 8);
+	uint8_t b = (uint8_t)color;
 
-	r = std::clamp((int)(r * intensity), 0, 255);
-	g = std::clamp((int)(g * intensity), 0, 255);
-	b = std::clamp((int)(b * intensity), 0, 255);
+	uint8_t min = 0;
+	uint8_t max = 255;
+	r = std::clamp((uint8_t)(r * intensity), min, max);
+	g = std::clamp((uint8_t)(g * intensity), min, max);
+	b = std::clamp((uint8_t)(b * intensity), min, max);
 
 	uint32_t result = (a << 24) | (r << 16) | (g << 8) | b;
 
 	return result;
+}
+
+float GetShadingIntensity(float dist)
+{
+	int8_t maxShade = 90;
+	float maxDist = 1024.0f;
+	float factor = std::min(dist, maxDist) / maxDist;
+	factor *= 1.4f;
+	factor = std::min(factor, 1.0f);
+	//int8_t intensity = maxShade * factor;
+	float intensity = 1.0f - factor;
+	return intensity;
 }
 
 void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoint, const Vec2& vPoint, bool hCase, int32_t strip, float dist)
@@ -133,7 +217,7 @@ void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoin
 	// if texture should be stretched in y-dimension (height), then we need to determine how we should stretch it in x-dimension
 	float texHeightRatio = g_ImgHeight / (float)g_ImgWidth;
 	float texWidthUnits = g_CellSize / texHeightRatio;
-	uint32_t wallHeightPx = std::round(SCREEN_HEIGHT * heightRatio); // to get the same wallHeightPx as in Render to avoid artifacts
+	uint32_t wallHeightPx = std::ceil(SCREEN_HEIGHT * heightRatio); // to get the same wallHeightPx as in Render to avoid artifacts
 	int32_t offset = (SCREEN_HEIGHT - (int32_t)wallHeightPx) / 2;
 	uint32_t beginY = offset >= 0 ? offset : 0;
 	uint32_t endY = std::min(beginY + wallHeightPx, (uint32_t)SCREEN_HEIGHT);
@@ -165,12 +249,7 @@ void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoin
 			//color = ApplyBrightness(color, -25);
 		}
 
-		int8_t maxShade = 90;
-		float maxDist = 1024.0f;
-		float factor = std::min(dist, maxDist) / maxDist;
-		factor *= 1.4f;
-		//int8_t intensity = maxShade * factor;
-		float intensity = 1.0f - factor;
+		float intensity = GetShadingIntensity(dist);
 		color = ApplyBrightness(color, intensity);
 
 		framebuffer[i * SCREEN_WIDTH + strip] = color;
@@ -283,9 +362,12 @@ void Render(Uint32* framebuffer)
 
 
 		// TODO: round the result of heightRatio*SCREEN_HEIGHT if it's very close to the nearest integer. At the moment, some strips might differ in height by a pixel if we look at a wall perpendicularly. It's due to minuscule difference between those numbers
-		int wallHeightPx = std::round(heightRatio * SCREEN_HEIGHT);
-		int ceilingHeightPx = (SCREEN_HEIGHT - wallHeightPx) / 2;
-		int floorHeightPx = (SCREEN_HEIGHT - wallHeightPx) / 2;
+		int wallHeightPx = std::ceil(heightRatio * SCREEN_HEIGHT);
+		int ceilingHeightPx = std::ceil(((float)SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
+		int floorHeightPx = std::ceil(((float)SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
+		//int wallHeightPx = (heightRatio * SCREEN_HEIGHT);
+		//int ceilingHeightPx = (((float)SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
+		//int floorHeightPx = (((float)SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
 
 		// draw the ceiling/sky
 		for (int i = 0; i < ceilingHeightPx; i++)
@@ -295,27 +377,14 @@ void Render(Uint32* framebuffer)
 		}
 
 		// draw the wall
-		//for (int i = ceilingHeightPx; i < ceilingHeightPx + wallHeightPx; i++)
-		//{
-		//	//Uint32 color = 0xFFD6D6D6;
-		//	//color = hCase ? 0xFFA1A1A1 : 0xFF696969;
-		//	//uint8_t color = hCase ? 100 : 125;
-
-		//	uint8_t color = 100;
-		//	uint8_t shadedColor = ShadeColor(color, correctedDist);
-		//	uint32_t expandedColor = ExpandToRgba(shadedColor);
-		//	framebuffer[i * SCREEN_WIDTH + strip] = expandedColor;
-		//}
-
 		TextureMapStrip(framebuffer, heightRatioRaw, hPoint, vPoint, hCase, strip, correctedDist);
 
 		// draw the floor
+		int counter = 0;
 		for (int i = ceilingHeightPx + wallHeightPx; i < SCREEN_HEIGHT; i++)
 		{
-			//Uint32 color = 0xFF404040;
-			//framebuffer[i * SCREEN_WIDTH + strip] = color;
-
-
+			// This code below makes a ray cast for every pixel. There are probably faster ways to do the same thing like horizontal line scan
+			// Based on https://permadi.com/1996/05/ray-casting-tutorial-12/
 			float halfWallHeight = wallHeight / 2.0f;
 			float playerHeight = halfWallHeight;
 			float rowDiff = i - SCREEN_HEIGHT / 2;
@@ -324,11 +393,11 @@ void Render(Uint32* framebuffer)
 			//float halfVFOV = atanf(halfWallHeight / wallHeight);
 			//float halfProjPlaneHeight = tanf(halfVFOV) / distToProjPlane;
 			float halfProjPlaneHeight = (halfWallHeight / wallHeight) / distToProjPlane;
-			float heightPerPixel = halfProjPlaneHeight / (SCREEN_HEIGHT / 2);
+			float halfScreenHeight = SCREEN_HEIGHT / 2.0f;
+			float heightPerPixel = halfProjPlaneHeight / halfScreenHeight;
 			float distToRow = rowDiff * heightPerPixel;
 			
-			// https://permadi.com/1996/05/ray-casting-tutorial-12/
-			// distToFloor / distToProjPlane = playerHeight / rowDiff
+			// distToFloor / distToProjPlane = playerHeight / distToRow
 			float distToFloor = (playerHeight / distToRow) * distToProjPlane; // dist from player's feet to point P on floor
 			
 			float hyp = distToFloor / cosf(localAngleRad);
@@ -341,10 +410,19 @@ void Render(Uint32* framebuffer)
 
 			float worldX = playerX + dx;
 			float worldY = playerY + dy;
+			
+			if (1 && counter == 0)
+			{
+				std::printf("%d worldY: %.2f, corDist: %.2f\n", strip, worldY, correctedDist);
+			}
 
 			uint32_t color = GetFloorColor(worldX, worldY);
+			//uint32_t color = 0xFFCCCCCC;
+			float intensity = GetShadingIntensity(hyp);
+			color = ApplyBrightness(color, intensity);
 
 			framebuffer[i * SCREEN_WIDTH + strip] = color;
+			counter++;
 		}
 	}
 }

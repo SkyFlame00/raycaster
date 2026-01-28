@@ -14,3 +14,5 @@ const float FAR_VIEW_DIST_LIMIT = 1000.0f;
 
 constexpr int LEVEL_ROWS = 17;
 constexpr int LEVEL_COLS = 18;
+//constexpr int LEVEL_ROWS = 67;
+//constexpr int LEVEL_COLS = 5;
