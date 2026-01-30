@@ -212,7 +212,7 @@ float GetShadingIntensity(float dist)
 	return intensity;
 }
 
-void TextureMapStrip(uint32_t* framebuffer, float heightRatio, const Vec2& hPoint, const Vec2& vPoint, bool hCase, int32_t strip, float dist)
+void DrawWall(uint32_t* framebuffer, float heightRatio, const Vec2& hPoint, const Vec2& vPoint, bool hCase, int32_t strip, float dist)
 {
 	// if texture should be stretched in y-dimension (height), then we need to determine how we should stretch it in x-dimension
 	float texHeightRatio = g_ImgHeight / (float)g_ImgWidth;
@@ -272,29 +272,69 @@ uint32_t GetFloorColor(float worldX, float worldY)
 	return color;
 }
 
+void DrawFloor(uint32_t* framebuffer, float distToProjPlane, float worldAngle, float localAngle, uint32_t strip, uint32_t wallHeight, uint32_t beginY, uint32_t endY)
+{
+	for (int i = beginY; i < endY; i++)
+	{
+		// This code below makes a ray cast for every pixel. There are probably faster ways to do the same thing like horizontal line scan
+		// Based on https://permadi.com/1996/05/ray-casting-tutorial-12/
+		float halfWallHeight = wallHeight / 2.0f;
+		float playerHeight = halfWallHeight;
+		float rowDiff = i - SCREEN_HEIGHT / 2;
+
+		// Vertical FOV is unknown but given wallHeight and the distance at which the wall exactly covers the screen's height (which is the same as wallHeight), we can find it
+		//float halfVFOV = atanf(halfWallHeight / wallHeight);
+		//float halfProjPlaneHeight = tanf(halfVFOV) / distToProjPlane;
+		float halfProjPlaneHeight = (halfWallHeight / wallHeight) / distToProjPlane;
+		float halfScreenHeight = SCREEN_HEIGHT / 2.0f;
+		float heightPerPixel = halfProjPlaneHeight / halfScreenHeight;
+		float distToRow = rowDiff * heightPerPixel;
+
+		// distToFloor / distToProjPlane = playerHeight / distToRow
+		float distToFloor = (playerHeight / distToRow) * distToProjPlane; // dist from player's feet to point P on floor
+
+		float hyp = distToFloor / cosf(localAngle);
+
+		float dx = hyp * cosf(worldAngle);
+		float dy = hyp * sinf(worldAngle);
+
+		float playerX = g_Player.m_Pos.x;
+		float playerY = g_Player.m_Pos.y;
+
+		float worldX = playerX + dx;
+		float worldY = playerY + dy;
+
+		uint32_t color = GetFloorColor(worldX, worldY);
+		//uint32_t color = 0xFFCCCCCC;
+		float intensity = GetShadingIntensity(hyp);
+		color = ApplyBrightness(color, intensity);
+
+		framebuffer[i * SCREEN_WIDTH + strip] = color;
+	}
+}
+
 void Render(Uint32* framebuffer)
 {
-	// The distance to the projection plane is determined by the FOV and screen width
-	// halfWidth / distToProjPlane = tan(FOV/2)
-	// TODO: make a diagram and put it in raycasting.md
-	float halfWidth = SCREEN_WIDTH / 2.0f;
-	float halfFOV = g_FOV / 2.0f;
-	float halfFOVTan = tanf(ToRadians(halfFOV));
-	if (IsZero(halfFOVTan)) // TODO: handle differently
+	// Define the distance to the projection plane to be 1. Everything else will be calculated from it and FOV
+	float distToProjPlane = 1.0f;
+	float halfFOVTan = tanf(ToRadians(g_FOV / 2.0f));
+	if (NearZero(halfFOVTan)) // TODO: handle differently
 		return;
-	float distToProjPlane = halfWidth / halfFOVTan;
-	if (NearZero(distToProjPlane))
-		return;
+	float halfProjPlaneWidth = halfFOVTan * distToProjPlane;
+	float projPlaneWidth = halfProjPlaneWidth * 2;
+
+	// The width of a single column
+	float stripWidth = projPlaneWidth / SCREEN_WIDTH;
 
 	for (int strip = 0; strip < SCREEN_WIDTH; strip++)
 	{
-		// What we're doing here with xplane and angleRad is we're trying to get an angle at which a ray goes through strip N to get equally spaced (or linear) columns. Without this, the columns would look slightly non-linear. Look-up "fixed angle vs equally spaced columns"
-		// https://www.scottsmitelli.com/articles/we-can-fix-your-raycaster/
-		float xplane = halfWidth - strip;
-		float localAngleRad = atanf(xplane / distToProjPlane); // atan2f isn't needed since we use exactly I and IV quadrants
+		// Get an angle at which a ray goes through the strip N to get equally spaced (or linear) columns.
+		// Without this, the columns would look slightly non-linear even after the fish-eye effect correction.
+		// See https://www.scottsmitelli.com/articles/we-can-fix-your-raycaster/
+		float projPlaneX = halfProjPlaneWidth - strip * stripWidth;
+		float localAngleRad = atanf(projPlaneX / distToProjPlane); // atan2f isn't needed since we use exactly I and IV quadrants
 		float worldAngleRad = localAngleRad + ToRadians(g_Player.m_ViewAngleDeg);
 		
-		// find intersection points
 		Vec2 hPoint, vPoint;
 		Vec2i hCell, vCell;
 		bool hasHorIntersection = WallRaycastH(g_Player.m_Pos, worldAngleRad, *g_Level, hPoint, hCell);
@@ -353,21 +393,13 @@ void Render(Uint32* framebuffer)
 
 		const float baseHeight = 80.0f;
 
-		if (0)
-		{
-			// This is a test on the wall/texture "teeth"
-			std::printf("s: %d, d: %.10f, c: %.10f, cd: %.10f\n",
-					strip, dist, correction, correctedDist);
-		}
-
-
-		// TODO: round the result of heightRatio*SCREEN_HEIGHT if it's very close to the nearest integer. At the moment, some strips might differ in height by a pixel if we look at a wall perpendicularly. It's due to minuscule difference between those numbers
+		// We ceil to the next integer to avoid an issue with floor texture mapping when a cast ray goes through the wall instead of below it.
+		// This is due to one-pixel-difference which occurs due to integer truncation. Say, wallHeight is 5.4, so wallHeightPx will be 5.
+		// Then, we'll use 5 in calculations which will produce slightly incorrect results (they become more pronounced with increasing distance) because we should've taken something bigger than 5.4.
+		// Rounding (in our case - ceiling) also helps avoid a "teeth" effect when neighboring pixels differ by one texel.
 		int wallHeightPx = std::ceil(heightRatio * SCREEN_HEIGHT);
-		int ceilingHeightPx = std::ceil(((float)SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
-		int floorHeightPx = std::ceil(((float)SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
-		//int wallHeightPx = (heightRatio * SCREEN_HEIGHT);
-		//int ceilingHeightPx = (((float)SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
-		//int floorHeightPx = (((float)SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
+		int floorHeightPx = std::floor((SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
+		int ceilingHeightPx = std::ceil((SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
 
 		// draw the ceiling/sky
 		for (int i = 0; i < ceilingHeightPx; i++)
@@ -376,54 +408,9 @@ void Render(Uint32* framebuffer)
 			framebuffer[i * SCREEN_WIDTH + strip] = color;
 		}
 
-		// draw the wall
-		TextureMapStrip(framebuffer, heightRatioRaw, hPoint, vPoint, hCase, strip, correctedDist);
+		DrawWall(framebuffer, heightRatioRaw, hPoint, vPoint, hCase, strip, correctedDist);
 
-		// draw the floor
-		int counter = 0;
-		for (int i = ceilingHeightPx + wallHeightPx; i < SCREEN_HEIGHT; i++)
-		{
-			// This code below makes a ray cast for every pixel. There are probably faster ways to do the same thing like horizontal line scan
-			// Based on https://permadi.com/1996/05/ray-casting-tutorial-12/
-			float halfWallHeight = wallHeight / 2.0f;
-			float playerHeight = halfWallHeight;
-			float rowDiff = i - SCREEN_HEIGHT / 2;
-
-			// Vertical FOV is unknown but given wallHeight and the distance at which the wall exactly covers the screen's height (which is the same as wallHeight), we can find it
-			//float halfVFOV = atanf(halfWallHeight / wallHeight);
-			//float halfProjPlaneHeight = tanf(halfVFOV) / distToProjPlane;
-			float halfProjPlaneHeight = (halfWallHeight / wallHeight) / distToProjPlane;
-			float halfScreenHeight = SCREEN_HEIGHT / 2.0f;
-			float heightPerPixel = halfProjPlaneHeight / halfScreenHeight;
-			float distToRow = rowDiff * heightPerPixel;
-			
-			// distToFloor / distToProjPlane = playerHeight / distToRow
-			float distToFloor = (playerHeight / distToRow) * distToProjPlane; // dist from player's feet to point P on floor
-			
-			float hyp = distToFloor / cosf(localAngleRad);
-
-			float dx = hyp * cosf(worldAngleRad);
-			float dy = hyp * sinf(worldAngleRad);
-
-			float playerX = g_Player.m_Pos.x;
-			float playerY = g_Player.m_Pos.y;
-
-			float worldX = playerX + dx;
-			float worldY = playerY + dy;
-			
-			if (1 && counter == 0)
-			{
-				std::printf("%d worldY: %.2f, corDist: %.2f\n", strip, worldY, correctedDist);
-			}
-
-			uint32_t color = GetFloorColor(worldX, worldY);
-			//uint32_t color = 0xFFCCCCCC;
-			float intensity = GetShadingIntensity(hyp);
-			color = ApplyBrightness(color, intensity);
-
-			framebuffer[i * SCREEN_WIDTH + strip] = color;
-			counter++;
-		}
+		DrawFloor(framebuffer, distToProjPlane, worldAngleRad, localAngleRad, strip, wallHeight, ceilingHeightPx + wallHeightPx, SCREEN_HEIGHT);
 	}
 }
 
