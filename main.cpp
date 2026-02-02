@@ -16,7 +16,7 @@
 #include "Level.h"
 
 
-const char* g_RawLevelData2 =
+const char* g_RawLevelData1 =
 					"11111"\
 					"1   1"\
 					"1 P 1"\
@@ -212,42 +212,17 @@ float GetShadingIntensity(float dist)
 	return intensity;
 }
 
-void DrawWall(uint32_t* framebuffer, float heightRatio, const Vec2& hPoint, const Vec2& vPoint, bool hCase, int32_t strip, float dist)
+void DrawWall(uint32_t* framebuffer, uint32_t wallHeightPx, int32_t beginY, int32_t endY, uint32_t screenBeginY, uint32_t screenEndY, float xcoord, int32_t strip, float dist)
 {
 	// if texture should be stretched in y-dimension (height), then we need to determine how we should stretch it in x-dimension
 	float texHeightRatio = g_ImgHeight / (float)g_ImgWidth;
 	float texWidthUnits = g_CellSize / texHeightRatio;
-	uint32_t wallHeightPx = std::ceil(SCREEN_HEIGHT * heightRatio); // to get the same wallHeightPx as in Render to avoid artifacts
-	int32_t offset = (SCREEN_HEIGHT - (int32_t)wallHeightPx) / 2;
-	uint32_t beginY = offset >= 0 ? offset : 0;
-	uint32_t endY = std::min(beginY + wallHeightPx, (uint32_t)SCREEN_HEIGHT);
-	float textureX;
-	if (hCase)
-	{
-		textureX = fmodf(hPoint.x, texWidthUnits) / texWidthUnits;
-	}
-	else
-	{
-		textureX = fmodf(vPoint.y, texWidthUnits) / texWidthUnits;
-	}
+	float textureX = fmodf(xcoord, texWidthUnits) / texWidthUnits;
 	
-	for (int32_t i = beginY; i < endY; i++)
+	for (int32_t i = screenBeginY; i < screenEndY; i++)
 	{
-		float textureY = (i - offset) / (float)wallHeightPx;
+		float textureY = (i - beginY) / ((float)endY - beginY);
 		uint32_t color = TextureSample(g_ImgData, g_ImgWidth, g_ImgHeight, g_ImgNrChannels, textureX, textureY);
-
-		if (0 && i==0)
-		{
-			// This is a test on the wall/texture "teeth"
-			std::printf("s: %d, c: %x, off: %d, (%u, %u), (%.10f, %.10f), wh=%u, hr=%.10f\n",
-					strip, color, offset, beginY, endY, textureX, textureY, wallHeightPx, heightRatio);
-		}
-
-		if (hCase)
-		{
-			// apply horizontal wall shading
-			//color = ApplyBrightness(color, -25);
-		}
 
 		float intensity = GetShadingIntensity(dist);
 		color = ApplyBrightness(color, intensity);
@@ -335,19 +310,26 @@ void Render(Uint32* framebuffer)
 		float localAngleRad = atanf(projPlaneX / distToProjPlane); // atan2f isn't needed since we use exactly I and IV quadrants
 		float worldAngleRad = localAngleRad + ToRadians(g_Player.m_ViewAngleDeg);
 		
-		Vec2 hPoint, vPoint;
-		Vec2i hCell, vCell;
-		bool hasHorIntersection = WallRaycastH(g_Player.m_Pos, worldAngleRad, *g_Level, hPoint, hCell);
-		bool hasVerIntersection = WallRaycastV(g_Player.m_Pos, worldAngleRad, *g_Level, vPoint, vCell);
+		std::vector<ray::WallRaycastHit> hHits;
+		std::vector<ray::WallRaycastHit> vHits;
+
+		WallRaycastH(g_Player.m_Pos, worldAngleRad, *g_Level, hHits);
+		WallRaycastV(g_Player.m_Pos, worldAngleRad, *g_Level, vHits);
+
+		const bool hasHorIntersection = hHits.size() > 0;
+		const bool hasVerIntersection = vHits.size() > 0;
 		if (!hasHorIntersection && !hasVerIntersection)
 		{
 			// sth went wrong: assert and exit
-			std::printf("No intersection. HorPoint: (%d, %d), VerPoint: (%d, %d)\n",
-					hCell.x, hCell.y, vCell.x, vCell.y);
+			std::printf("No intersection\n");
 			return;
 		}
 		
 		// find distance to the closest intersection
+		const Vec2 hPoint = hasHorIntersection ? hHits[0].point : Vec2{};
+	   	const Vec2 vPoint = hasVerIntersection ? vHits[0].point : Vec2{};
+		const Vec2i hCell = hasHorIntersection ? hHits[0].cell : Vec2i{};
+		const Vec2i vCell = hasVerIntersection ? vHits[0].cell : Vec2i{};
 		float dist = 0.0f;
 		float horPointDist = Distance(hPoint, g_Player.m_Pos);
 		float verPointDist = Distance(vPoint, g_Player.m_Pos); 
@@ -386,20 +368,25 @@ void Render(Uint32* framebuffer)
 		// dist of player to proj plane = 1
 		// proj wall height = wall height / dist to wall
 		const float distToProjPlane = 1.0f;
+		const float baseWallHeight = 80.0f;
 		const float wallHeight = 80.0f;
-		float heightRatio = (wallHeight / correctedDist) * distToProjPlane;
-		float heightRatioRaw = heightRatio;
-		heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
-
-		const float baseHeight = 80.0f;
+		float wallHeightNorm = (wallHeight / correctedDist) * distToProjPlane;
+		//heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
 
 		// We ceil to the next integer to avoid an issue with floor texture mapping when a cast ray goes through the wall instead of below it.
 		// This is due to one-pixel-difference which occurs due to integer truncation. Say, wallHeight is 5.4, so wallHeightPx will be 5.
 		// Then, we'll use 5 in calculations which will produce slightly incorrect results (they become more pronounced with increasing distance) because we should've taken something bigger than 5.4.
 		// Rounding (in our case - ceiling) also helps avoid a "teeth" effect when neighboring pixels differ by one texel.
-		int wallHeightPx = std::ceil(heightRatio * SCREEN_HEIGHT);
-		int floorHeightPx = std::floor((SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
-		int ceilingHeightPx = std::ceil((SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f);
+		int wallHeightPx = std::ceil(wallHeightNorm * SCREEN_HEIGHT);
+		float halfAvailableSpace = (SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f;
+		int floorHeightPx = std::max(std::floor(halfAvailableSpace), 0.0f);
+		int ceilingHeightPx = std::max(std::ceil(halfAvailableSpace), 0.0f);
+
+		float baseWallHeightNorm = (baseWallHeight / correctedDist) * distToProjPlane;
+		uint32_t bottomWallHeightPx = std::ceil((baseWallHeightNorm * SCREEN_HEIGHT) / 2.0f);
+		uint32_t topWallHeightPx = wallHeightPx - bottomWallHeightPx;
+		uint32_t ceilingBeginY = 0;
+		uint32_t ceilingEndY = std::max((SCREEN_HEIGHT / 2) - topWallHeightPx, static_cast<uint32_t>(0));
 
 		// draw the ceiling/sky
 		for (int i = 0; i < ceilingHeightPx; i++)
@@ -408,9 +395,17 @@ void Render(Uint32* framebuffer)
 			framebuffer[i * SCREEN_WIDTH + strip] = color;
 		}
 
-		DrawWall(framebuffer, heightRatioRaw, hPoint, vPoint, hCase, strip, correctedDist);
+		int32_t wallBeginY = SCREEN_HEIGHT / 2 - topWallHeightPx;
+		int32_t wallEndY = SCREEN_HEIGHT / 2 + bottomWallHeightPx;
+		uint32_t screenWallBeginY = static_cast<uint32_t>(std::max(0, wallBeginY));
+		uint32_t screenWallEndY = static_cast<uint32_t>(std::min(wallEndY, SCREEN_HEIGHT));
+		float xcoord = hCase ? hPoint.x : vPoint.y;
+		DrawWall(framebuffer, wallHeightPx, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
 
-		DrawFloor(framebuffer, distToProjPlane, worldAngleRad, localAngleRad, strip, wallHeight, ceilingHeightPx + wallHeightPx, SCREEN_HEIGHT);
+		uint32_t floorBeginY = screenWallEndY;
+		uint32_t floorEndY = SCREEN_HEIGHT;
+		if (floorBeginY < floorEndY)
+			DrawFloor(framebuffer, distToProjPlane, worldAngleRad, localAngleRad, strip, wallHeight, floorBeginY, floorEndY);
 	}
 }
 
@@ -489,16 +484,18 @@ void PhysicsFrame(float dt)
 		float dy = speed * sinf(angleRad);
 		Vec2 pos = g_Player.m_Pos;
 		Vec2 projPoint = { pos.x + dx, pos.y + dy };
-		Vec2 wallPoint;
-		Vec2i _wallCell;
 		
-		bool found = WallRaycast(pos, angleRad, *g_Level, wallPoint, _wallCell);
+		std::vector<ray::WallRaycastHit> hits;
+		WallRaycast(pos, angleRad, *g_Level, hits);
+
+		const bool found = hits.size() > 0;
 		if (!found)
 		{
 			// report an error
 			return;
 		}
 
+		Vec2 wallPoint = hits[0].point;
 		float distToProjPoint = (projPoint - pos).Length();
 		float distToWallPoint = (wallPoint - pos).Length();
 

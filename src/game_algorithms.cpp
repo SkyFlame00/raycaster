@@ -11,143 +11,143 @@
 #include "math/math.h"
 #include <cmath>
 
-bool WallRaycastH(const Vec2& origin, float angle, const Level& level, Vec2& o_HPoint, Vec2i& o_Cell)
+namespace ray
 {
-	const int32_t cellSize = level.GetCellSize();
-	const Vec2i originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
-	const float normAngle = NormalizeAngleRad(angle);
-	const bool bQuadrant1 = ANGLE_0 <= normAngle && normAngle < ANGLE_90;
-	const bool bQuadrant2 = ANGLE_90 <= normAngle && normAngle < ANGLE_180;
-	const bool bQuadrant3 = ANGLE_180 <= normAngle && normAngle < ANGLE_270;
-	const bool bQuadrant4 = ANGLE_270 <= normAngle && normAngle < ANGLE_360;
-	const bool bDownwardCast = bQuadrant3 || bQuadrant4;
-	const float deltaY = (bQuadrant1 || bQuadrant2) ? cellSize : -cellSize;
-	const Vec2i& worldSize = level.GetSize();
-	float curY = (originCell.y + ((bQuadrant1 || bQuadrant2) ? 1 : 0)) * cellSize;
-
-	const float M = std::tan(normAngle);
-	const bool bHorizontalLine = NearZero(M);
-	const bool bVerticalLine = NearlyEqual(normAngle, ANGLE_90) || NearlyEqual(normAngle, ANGLE_270);
-
-	if (bHorizontalLine)
-		return false;
-
-	const float slope = bVerticalLine ? 0.0f : 1.0f / M;
-
-#if (1)
-	while (0 <= curY && curY < worldSize.y)
-#else
-	while (true)
-#endif
+	void WallRaycastH(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits)
 	{
-		// x = (1/M) * (y - yp) + xp
-		float x = slope * (curY - origin.y) + origin.x;
-		int cellX = x / cellSize;
-		int cellY = curY / cellSize - (bDownwardCast ? 1 : 0);
-		Vec2i cell = { cellX, cellY };
+		const int32_t cellSize = level.GetCellSize();
+		const Vec2i originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
+		const float normAngle = NormalizeAngleRad(angle);
+		const bool bQuadrant1 = ANGLE_0 <= normAngle && normAngle < ANGLE_90;
+		const bool bQuadrant2 = ANGLE_90 <= normAngle && normAngle < ANGLE_180;
+		const bool bQuadrant3 = ANGLE_180 <= normAngle && normAngle < ANGLE_270;
+		const bool bQuadrant4 = ANGLE_270 <= normAngle && normAngle < ANGLE_360;
+		const bool bDownwardCast = bQuadrant3 || bQuadrant4;
+		const float deltaY = (bQuadrant1 || bQuadrant2) ? cellSize : -cellSize;
+		const Vec2i& worldSize = level.GetSize();
+		float curY = (originCell.y + ((bQuadrant1 || bQuadrant2) ? 1 : 0)) * cellSize;
 
-		o_HPoint = { x, curY };
-		o_Cell = cell;
+		const float M = std::tan(normAngle);
+		const bool bHorizontalLine = NearZero(M);
+		const bool bVerticalLine = NearlyEqual(normAngle, ANGLE_90) || NearlyEqual(normAngle, ANGLE_270);
 
-		if (!level.IsCellWithinBounds(cell))
-			return false;
+		if (bHorizontalLine)
+			return;
 
-		if (level.IsSolidWall(cell))
-			return true;
+		const float slope = bVerticalLine ? 0.0f : 1.0f / M;
 
-		curY += deltaY;
-	}
-
-	return false;
-}
-
-bool WallRaycastV(const Vec2& origin, float angle, const Level& level, Vec2& o_VPoint, Vec2i& o_Cell)
-{
-	const int32_t cellSize = level.GetCellSize();
-	const Vec2i originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
-	const float normAngle = NormalizeAngleRad(angle);
-	const bool bQuadrant1 = ANGLE_0 <= normAngle && normAngle < ANGLE_90;
-	const bool bQuadrant2 = ANGLE_90 <= normAngle && normAngle < ANGLE_180;
-	const bool bQuadrant3 = ANGLE_180 <= normAngle && normAngle < ANGLE_270;
-	const bool bQuadrant4 = ANGLE_270 <= normAngle && normAngle < ANGLE_360;
-	const bool bLeftwardCast = bQuadrant2 || bQuadrant3;
-	const float deltaX = (bQuadrant1 || bQuadrant4) ? cellSize : -cellSize;
-	const Vec2i& worldSize = level.GetSize();
-	float curX = (originCell.x + ((bQuadrant1 || bQuadrant4) ? 1 : 0)) * cellSize;
-
-	const float M = std::tan(normAngle);
-	const bool bHorizontalLine = NearZero(M);
-	const bool bVerticalLine = NearlyEqual(normAngle, ANGLE_90) || NearlyEqual(normAngle, ANGLE_270);
-
-	if (bVerticalLine)
-		return false;
-
-	const float slope = bHorizontalLine ? 0.0f : M;
-	
-#if (1)
-	while (0 <= curX && curX < worldSize.x)
-#else
-	while (true)
-#endif
-	{
-		// y = M * (x - xp) + yp
-		float y = slope * (curX - origin.x) + origin.y;	
-		int cellX = curX / cellSize - (bLeftwardCast ? 1 : 0);
-		int cellY = y / cellSize;
-		Vec2i cell = { cellX, cellY };
-
-		o_VPoint = { curX, y };
-		o_Cell = cell;
-
-		if (!level.IsCellWithinBounds(cell))
-			break;
-
-		if (level.IsSolidWall(cell))
-			return true;
-
-		curX += deltaX;
-	}
-
-	return false;
-}
-
-bool WallRaycast(const Vec2& origin, float angle, const Level& level, Vec2& o_Point, Vec2i& o_Cell)
-{
-	Vec2 hPoint, vPoint;
-	Vec2i hCell, vCell;
-	bool bHIntersection = WallRaycastH(origin, angle, level, hPoint, hCell);
-	bool bVIntersection = WallRaycastV(origin, angle, level, vPoint, vCell);
-	bool found = bHIntersection || bVIntersection;
-
-	if (bHIntersection || bVIntersection)
-	{
-		float hDist = Distance(origin, hPoint);
-		float vDist = Distance(origin, vPoint);
-		bool bBothIntersections = bHIntersection && bVIntersection;
-		bool hCase = (bBothIntersections && (hDist <  vDist)) || (!bBothIntersections && bHIntersection);
-		bool vCase = (bBothIntersections && (hDist >= vDist)) || (!bBothIntersections && bVIntersection);
-
-		found = true;
-
-		if (hCase)
+		while (0 <= curY && curY < worldSize.y)
 		{
-			o_Point = hPoint;
-			o_Cell = hCell;
+			// x = (1/M) * (y - yp) + xp
+			float x = slope * (curY - origin.y) + origin.x;
+			int cellX = x / cellSize;
+			int cellY = curY / cellSize - (bDownwardCast ? 1 : 0);
+			Vec2i cell = { cellX, cellY };
+
+			if (!level.IsCellWithinBounds(cell))
+				return;
+
+			if (level.IsSolidWall(cell))
+			{
+				WallRaycastHit hit;
+				hit.point = { x, curY };
+				hit.cell = cell;
+				o_Hits.push_back(hit);
+			}
+
+			curY += deltaY;
 		}
-		else if (vCase)
+	}
+
+	void WallRaycastV(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits)
+	{
+		const int32_t cellSize = level.GetCellSize();
+		const Vec2i originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
+		const float normAngle = NormalizeAngleRad(angle);
+		const bool bQuadrant1 = ANGLE_0 <= normAngle && normAngle < ANGLE_90;
+		const bool bQuadrant2 = ANGLE_90 <= normAngle && normAngle < ANGLE_180;
+		const bool bQuadrant3 = ANGLE_180 <= normAngle && normAngle < ANGLE_270;
+		const bool bQuadrant4 = ANGLE_270 <= normAngle && normAngle < ANGLE_360;
+		const bool bLeftwardCast = bQuadrant2 || bQuadrant3;
+		const float deltaX = (bQuadrant1 || bQuadrant4) ? cellSize : -cellSize;
+		const Vec2i& worldSize = level.GetSize();
+		float curX = (originCell.x + ((bQuadrant1 || bQuadrant4) ? 1 : 0)) * cellSize;
+
+		const float M = std::tan(normAngle);
+		const bool bHorizontalLine = NearZero(M);
+		const bool bVerticalLine = NearlyEqual(normAngle, ANGLE_90) || NearlyEqual(normAngle, ANGLE_270);
+
+		if (bVerticalLine)
+			return;
+
+		const float slope = bHorizontalLine ? 0.0f : M;
+
+		while (0 <= curX && curX < worldSize.x)
 		{
-			o_Point = vPoint;
-			o_Cell = vCell;
+			// y = M * (x - xp) + yp
+			float y = slope * (curX - origin.x) + origin.y;	
+			int cellX = curX / cellSize - (bLeftwardCast ? 1 : 0);
+			int cellY = y / cellSize;
+			Vec2i cell = { cellX, cellY };
+
+
+			if (!level.IsCellWithinBounds(cell))
+				break;
+
+			if (level.IsSolidWall(cell))
+			{
+				WallRaycastHit hit;
+				hit.point = { curX, y };
+				hit.cell = cell;
+				o_Hits.push_back(hit);
+			}
+
+			curX += deltaX;
+		}
+	}
+
+	void WallRaycast(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits)
+	{
+		std::vector<WallRaycastHit> hHits;
+		std::vector<WallRaycastHit> vHits;
+
+		WallRaycastH(origin, angle, level, hHits);
+		WallRaycastV(origin, angle, level, vHits);
+
+		bool bHitH = hHits.size() > 0;
+		bool bHitV = vHits.size() > 0;
+
+		if (bHitH || bHitV)
+		{
+			Vec2 hPoint = bHitH ? hHits[0].point : Vec2{};
+			Vec2 vPoint = bHitV ? vHits[0].point : Vec2{};
+			Vec2i hCell = bHitH ? hHits[0].cell : Vec2i{};
+		   	Vec2i vCell = bHitV ? vHits[0].cell : Vec2i{};
+			float hDist = Distance(origin, hPoint);
+			float vDist = Distance(origin, vPoint);
+			bool bBothIntersections = bHitH && bHitV;
+			bool hCase = (bBothIntersections && (hDist <  vDist)) || (!bBothIntersections && bHitH);
+			bool vCase = (bBothIntersections && (hDist >= vDist)) || (!bBothIntersections && bHitV);
+
+			// TODO: merge both hHits and vHits into a single vector and sort it based on the point distance and remove the code below
+
+			if (hCase)
+			{
+				o_Hits.push_back(hHits[0]);
+			}
+			else if (vCase)
+			{
+				o_Hits.push_back(vHits[0]);
+			}
+			else
+			{
+				std::printf("Neither hCase nor vCase took place\n");
+			}	
 		}
 		else
 		{
-			std::printf("Neither hCase nor vCase took place\n");
-		}	
+			std::printf("No intersection occurred. Seems like we went out of the world's bounds?\n");
+		}
 	}
-	else
-	{
-		std::printf("No intersection occurred. Seems like we went out of the world's bounds?\n");
-	}
-
-	return found;
 }
+

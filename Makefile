@@ -1,4 +1,5 @@
-CFLAGS = -g -fdiagnostics-color=always -Iexternal -Isrc
+#CFLAGS = -g -fdiagnostics-color=always -Iexternal -Isrc
+CFLAGS = -g -Iexternal -Isrc
 BUILD = build
 SRC = src
 BIN = bin

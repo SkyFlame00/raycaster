@@ -1,12 +1,25 @@
 #pragma once
 
+#include <vector>
+
+#include "math/math.h"
+
 struct Vec2;
 struct Vec2i;
 class Level;
 
-bool WallRaycastH(const Vec2& origin, float angle, const Level& level, Vec2& o_HPoint, Vec2i& o_Cell);
+namespace ray
+{
+	struct WallRaycastHit
+	{
+		Vec2 point;
+		Vec2i cell;
+	};
 
-bool WallRaycastV(const Vec2& origin, float angle, const Level& level, Vec2& o_VPoint, Vec2i& o_Cell);
+	void WallRaycastH(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits);
 
-bool WallRaycast(const Vec2& origin, float angle, const Level& level, Vec2& o_Point, Vec2i& o_Cell);
+	void WallRaycastV(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits);
+
+	void WallRaycast(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits);
+}
 
