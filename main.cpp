@@ -93,10 +93,10 @@ const char* g_RawLevelData =
                     "1   1     1    1 1"\
                     "11111     1      1"\
                     "1         1    1 1"\
-                    "1         1    1 1"\
+                    "1         2    1 1"\
                     "1              1 1"\
-                    "1         1    1 1"\
-                    "1         111111 1"\
+                    "1         259  1 1"\
+                    "1         349111 1"\
                     "1                1"\
                     "1  111     111   1"\
                     "1  111     111   1"\
@@ -212,20 +212,24 @@ float GetShadingIntensity(float dist)
 	return intensity;
 }
 
-void DrawWall(uint32_t* framebuffer, uint32_t wallHeightPx, int32_t beginY, int32_t endY, uint32_t screenBeginY, uint32_t screenEndY, float xcoord, int32_t strip, float dist)
+void DrawWall(uint32_t* framebuffer, float texRepeatY, int32_t beginY, int32_t endY, uint32_t screenBeginY, uint32_t screenEndY, float xcoord, int32_t strip, float dist)
 {
 	// if texture should be stretched in y-dimension (height), then we need to determine how we should stretch it in x-dimension
 	float texHeightRatio = g_ImgHeight / (float)g_ImgWidth;
 	float texWidthUnits = g_CellSize / texHeightRatio;
 	float textureX = fmodf(xcoord, texWidthUnits) / texWidthUnits;
-	
+
 	for (int32_t i = screenBeginY; i < screenEndY; i++)
 	{
-		float textureY = (i - beginY) / ((float)endY - beginY);
+		//float textureY = (i - beginY) / ((float)endY - beginY);
+		//float textureY = ((i - beginY) % baseWallHeightPx) / (float)baseWallHeightPx;
+		float ycoord = i - beginY;
+		float texHeightUnits = ((float)endY - beginY) / texRepeatY;
+		float textureY = fmodf(ycoord, texHeightUnits) / texHeightUnits;
 		uint32_t color = TextureSample(g_ImgData, g_ImgWidth, g_ImgHeight, g_ImgNrChannels, textureX, textureY);
 
 		float intensity = GetShadingIntensity(dist);
-		color = ApplyBrightness(color, intensity);
+		//color = ApplyBrightness(color, intensity);
 
 		framebuffer[i * SCREEN_WIDTH + strip] = color;
 	}
@@ -282,7 +286,7 @@ void DrawFloor(uint32_t* framebuffer, float distToProjPlane, float worldAngle, f
 		uint32_t color = GetFloorColor(worldX, worldY);
 		//uint32_t color = 0xFFCCCCCC;
 		float intensity = GetShadingIntensity(hyp);
-		color = ApplyBrightness(color, intensity);
+		//color = ApplyBrightness(color, intensity);
 
 		framebuffer[i * SCREEN_WIDTH + strip] = color;
 	}
@@ -324,88 +328,160 @@ void Render(Uint32* framebuffer)
 			std::printf("No intersection\n");
 			return;
 		}
-		
-		// find distance to the closest intersection
-		const Vec2 hPoint = hasHorIntersection ? hHits[0].point : Vec2{};
-	   	const Vec2 vPoint = hasVerIntersection ? vHits[0].point : Vec2{};
-		const Vec2i hCell = hasHorIntersection ? hHits[0].cell : Vec2i{};
-		const Vec2i vCell = hasVerIntersection ? vHits[0].cell : Vec2i{};
-		float dist = 0.0f;
-		float horPointDist = Distance(hPoint, g_Player.m_Pos);
-		float verPointDist = Distance(vPoint, g_Player.m_Pos); 
-		int cellX = 0;
-		int cellY = 0;
-		bool bothIntersections = hasHorIntersection && hasVerIntersection;
-		bool hCase = (bothIntersections && (horPointDist <  verPointDist)) || (!bothIntersections && hasHorIntersection);
-		bool vCase = (bothIntersections && (horPointDist >= verPointDist)) || (!bothIntersections && hasVerIntersection);
 
-		if (hCase)
+		float maxWallSize = 0.0f;
+		std::vector<ray::WallRaycastHit> hVisibleHits;
+		for (const ray::WallRaycastHit& hit : hHits)
 		{
-			dist = horPointDist;
-			cellX = hCell.x;
-			cellY = hCell.y;
-		}
-		else if (vCase)
-		{
-			dist = verPointDist;
-			cellX = vCell.x;
-			cellY = vCell.y;
-		}
-		else
-		{
-			std::printf("Neither hCase nor vCase occurred\n");
+			float wallSize = g_Level->GetWallSize(hit.cell);
+
+			if (maxWallSize < wallSize)
+			{
+				maxWallSize = wallSize;
+				hVisibleHits.push_back(hit);
+			}
 		}
 
-		// Make a fish eye effect correction
-		float correction = cosf(localAngleRad);
-		float correctedDist = correction * dist;
-		if (1)
-			correctedDist = std::round(correctedDist); // round to prevent the "teeth" (a texel issue)
-		if (NearZero(correctedDist))
-			correctedDist = 1.0f;
+		maxWallSize = 0.0f;
+		std::vector<ray::WallRaycastHit> vVisibleHits;
+		for (const ray::WallRaycastHit& hit : vHits)
+		{
+			float wallSize = g_Level->GetWallSize(hit.cell);
 
-		// proj wall height / dist of player to proj plane = wall height / dist to wall
-		// dist of player to proj plane = 1
-		// proj wall height = wall height / dist to wall
+			if (maxWallSize < wallSize)
+			{
+				maxWallSize = wallSize;
+				vVisibleHits.push_back(hit);
+			}
+		}
+
+		maxWallSize = 0.0f;
+		std::vector<ray::WallRaycastHit> visibleHits;
+		auto hIter = hVisibleHits.begin();
+		auto vIter = vVisibleHits.begin();
+		while (hIter != hVisibleHits.end() || vIter != vVisibleHits.end())
+		{
+			using HitVector = std::vector<ray::WallRaycastHit>;
+
+			auto nextVisibleHit = [maxWallSize](const HitVector& vec, HitVector::iterator iter)
+			{
+				for (; iter != vec.end(); ++iter)
+				{
+					const float wallSize = g_Level->GetWallSize(iter->cell);
+					if (maxWallSize < wallSize)
+						break;
+				}
+				return iter;
+			};
+
+			hIter = nextVisibleHit(hVisibleHits, hIter);
+			vIter = nextVisibleHit(vVisibleHits, vIter);
+
+			const bool hDraw = hIter != hVisibleHits.end();
+			const bool vDraw = vIter != vVisibleHits.end();
+			const float hWallSize = hDraw ? g_Level->GetWallSize(hIter->cell) : 0;
+			const float vWallSize = vDraw ? g_Level->GetWallSize(vIter->cell) : 0;
+			maxWallSize = std::max(maxWallSize, std::max(hWallSize, vWallSize));
+
+			if (hDraw && vDraw)
+			{
+				const float hDist = Distance(hIter->point, g_Player.m_Pos);
+				const float vDist = Distance(vIter->point, g_Player.m_Pos);
+
+				if (NearlyEqual(hDist, vDist))
+					std::printf("Horizontal and vertical hits are at the same distance.\n");
+
+				if (hDist < vDist)
+				{
+					visibleHits.push_back(*hIter);
+					visibleHits.push_back(*vIter);
+				}
+				else
+				{
+					visibleHits.push_back(*vIter);
+					visibleHits.push_back(*hIter);
+				}
+
+				hIter++;
+				vIter++;
+			}
+			else if (hDraw)
+			{
+				visibleHits.push_back(*hIter);
+				hIter++;
+			}
+			else if (vDraw)
+			{
+				visibleHits.push_back(*vIter);
+				vIter++;
+			}
+		}
+
 		const float distToProjPlane = 1.0f;
-		const float baseWallHeight = 80.0f;
-		const float wallHeight = 80.0f;
-		float wallHeightNorm = (wallHeight / correctedDist) * distToProjPlane;
-		//heightRatio = std::clamp(heightRatio, 0.0f, 1.0f);
+		const float baseWallHeight = g_Level->GetBaseWallHeight();
 
-		// We ceil to the next integer to avoid an issue with floor texture mapping when a cast ray goes through the wall instead of below it.
-		// This is due to one-pixel-difference which occurs due to integer truncation. Say, wallHeight is 5.4, so wallHeightPx will be 5.
-		// Then, we'll use 5 in calculations which will produce slightly incorrect results (they become more pronounced with increasing distance) because we should've taken something bigger than 5.4.
-		// Rounding (in our case - ceiling) also helps avoid a "teeth" effect when neighboring pixels differ by one texel.
-		int wallHeightPx = std::ceil(wallHeightNorm * SCREEN_HEIGHT);
-		float halfAvailableSpace = (SCREEN_HEIGHT - (float)wallHeightPx) / 2.0f;
-		int floorHeightPx = std::max(std::floor(halfAvailableSpace), 0.0f);
-		int ceilingHeightPx = std::max(std::ceil(halfAvailableSpace), 0.0f);
+		uint32_t maxTopWallHeightPx = 0;
+		uint32_t maxBottomWallHeightPx = 0;
+		for (auto iter = visibleHits.rbegin(); iter != visibleHits.rend(); iter++)
+		{
+			const ray::WallRaycastHit& hit = *iter;
 
-		float baseWallHeightNorm = (baseWallHeight / correctedDist) * distToProjPlane;
-		uint32_t bottomWallHeightPx = std::ceil((baseWallHeightNorm * SCREEN_HEIGHT) / 2.0f);
-		uint32_t topWallHeightPx = wallHeightPx - bottomWallHeightPx;
-		uint32_t ceilingBeginY = 0;
-		uint32_t ceilingEndY = std::max((SCREEN_HEIGHT / 2) - topWallHeightPx, static_cast<uint32_t>(0));
+			// find distance to the closest intersection
+			float dist = Distance(hit.point, g_Player.m_Pos);
+			int cellX = hit.cell.x;
+			int cellY = hit.cell.y;
+			bool hCase = hit.isHor;
+
+			// Make a fish eye effect correction
+			float correction = cosf(localAngleRad);
+			float correctedDist = correction * dist;
+			if (1)
+				correctedDist = std::round(correctedDist); // round to prevent the "teeth" (a texel issue)
+			if (NearZero(correctedDist))
+				correctedDist = 1.0f;
+
+			// proj wall height / dist of player to proj plane = wall height / dist to wall
+			// dist of player to proj plane = 1
+			// proj wall height = wall height / dist to wall
+			const float wallHeight = g_Level->GetWallSize(hit.cell);
+			float wallHeightNorm = (wallHeight / correctedDist) * distToProjPlane;
+
+			// We ceil to the next integer to avoid an issue with floor texture mapping when a cast ray goes through the wall instead of below it.
+			// This is due to one-pixel-difference which occurs due to integer truncation. Say, wallHeight is 5.4, so wallHeightPx will be 5.
+			// Then, we'll use 5 in calculations which will produce slightly incorrect results (they become more pronounced with increasing distance) because we should've taken something bigger than 5.4.
+			// Rounding (in our case - ceiling) also helps avoid a "teeth" effect when neighboring pixels differ by one texel.
+			int wallHeightPx = wallHeightNorm * SCREEN_HEIGHT;
+
+			float texRepeatY = wallHeight / baseWallHeight;
+
+			float baseWallHeightNorm = (baseWallHeight / correctedDist) * distToProjPlane;
+			//uint32_t baseWallHeightPx = baseWallHeightNorm * SCREEN_HEIGHT;
+			uint32_t bottomWallHeightPx = std::ceil((baseWallHeightNorm * SCREEN_HEIGHT) / 2.0f);
+			uint32_t topWallHeightPx = wallHeightPx - bottomWallHeightPx;
+			maxTopWallHeightPx = std::max(maxTopWallHeightPx, topWallHeightPx);
+			maxBottomWallHeightPx = std::max(maxBottomWallHeightPx, bottomWallHeightPx);
+
+			int32_t wallBeginY = SCREEN_HEIGHT / 2 - topWallHeightPx;
+			int32_t wallEndY = SCREEN_HEIGHT / 2 + bottomWallHeightPx;
+			uint32_t screenWallBeginY = static_cast<uint32_t>(std::max(0, wallBeginY));
+			uint32_t screenWallEndY = static_cast<uint32_t>(std::min(wallEndY, SCREEN_HEIGHT));
+			float xcoord = hCase ? hit.point.x : hit.point.y;
+
+			DrawWall(framebuffer, texRepeatY, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
+		}
 
 		// draw the ceiling/sky
+		const int32_t ceilingHeightPx = std::max(SCREEN_HEIGHT / 2 - (int32_t)maxTopWallHeightPx, 0);
 		for (int i = 0; i < ceilingHeightPx; i++)
 		{
 			Uint32 color = 0xFF000000;
 			framebuffer[i * SCREEN_WIDTH + strip] = color;
 		}
 
-		int32_t wallBeginY = SCREEN_HEIGHT / 2 - topWallHeightPx;
-		int32_t wallEndY = SCREEN_HEIGHT / 2 + bottomWallHeightPx;
-		uint32_t screenWallBeginY = static_cast<uint32_t>(std::max(0, wallBeginY));
-		uint32_t screenWallEndY = static_cast<uint32_t>(std::min(wallEndY, SCREEN_HEIGHT));
-		float xcoord = hCase ? hPoint.x : vPoint.y;
-		DrawWall(framebuffer, wallHeightPx, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
-
-		uint32_t floorBeginY = screenWallEndY;
+		uint32_t floorBeginY = std::min(SCREEN_HEIGHT / 2 + (int32_t)maxBottomWallHeightPx, SCREEN_HEIGHT);
 		uint32_t floorEndY = SCREEN_HEIGHT;
 		if (floorBeginY < floorEndY)
-			DrawFloor(framebuffer, distToProjPlane, worldAngleRad, localAngleRad, strip, wallHeight, floorBeginY, floorEndY);
+			DrawFloor(framebuffer, distToProjPlane, worldAngleRad, localAngleRad, strip, baseWallHeight, floorBeginY, floorEndY);
 	}
 }
 

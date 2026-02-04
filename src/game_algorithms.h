@@ -14,6 +14,7 @@ namespace ray
 	{
 		Vec2 point;
 		Vec2i cell;
+		bool isHor;
 	};
 
 	void WallRaycastH(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits);

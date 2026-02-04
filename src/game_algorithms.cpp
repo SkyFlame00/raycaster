@@ -44,7 +44,10 @@ namespace ray
 			int cellY = curY / cellSize - (bDownwardCast ? 1 : 0);
 			Vec2i cell = { cellX, cellY };
 
-			if (!level.IsCellWithinBounds(cell))
+			//if (!level.IsCellWithinBounds(cell))
+			//	return;
+
+			if (!level.IsPointWithinBounds({ x, curY }))
 				return;
 
 			if (level.IsSolidWall(cell))
@@ -52,6 +55,7 @@ namespace ray
 				WallRaycastHit hit;
 				hit.point = { x, curY };
 				hit.cell = cell;
+				hit.isHor = true;
 				o_Hits.push_back(hit);
 			}
 
@@ -90,15 +94,18 @@ namespace ray
 			int cellY = y / cellSize;
 			Vec2i cell = { cellX, cellY };
 
+			//if (!level.IsCellWithinBounds(cell))
+			//	break;
 
-			if (!level.IsCellWithinBounds(cell))
-				break;
+			if (!level.IsPointWithinBounds({ curX, y }))
+				return;
 
 			if (level.IsSolidWall(cell))
 			{
 				WallRaycastHit hit;
 				hit.point = { curX, y };
 				hit.cell = cell;
+				hit.isHor = false;
 				o_Hits.push_back(hit);
 			}
 
