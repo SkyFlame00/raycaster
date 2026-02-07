@@ -14,6 +14,7 @@
 #include "math/math.h"
 #include "game_algorithms.h"
 #include "Level.h"
+#include "TextureManager.h"
 
 
 const char* g_RawLevelData1 =
@@ -105,6 +106,13 @@ const char* g_RawLevelData =
                     "111111111111111111";
 Level* g_Level = nullptr;
 
+const std::string BKRED_1 = "./assets/textures/bkred_1.png";
+const std::string BUILDING_1 = "./assets/textures/building-1.png";
+const std::string BRIK_3 = "./assets/textures/brik_3.png";
+const std::string BRKS_1 = "./assets/textures/brks_1.png";
+const std::string BRKS_00 = "./assets/textures/brks_00.png";
+const std::string WALL51_1 = "./assets/textures/wall52_1.png";
+
 class Player
 {
 public:
@@ -117,10 +125,6 @@ public:
 const int g_CellSize = 64; // TODO: remove
 Player g_Player;
 int g_FOV = 60;
-uint8_t* g_ImgData = nullptr; // TODO: remove
-uint32_t g_ImgWidth;
-uint32_t g_ImgHeight;
-uint32_t g_ImgNrChannels;
 
 void MirrorLevelString(const char* src, char* dst)
 {
@@ -168,20 +172,6 @@ int32_t ExpandToRgba(int8_t value)
 	return (0xFF000000 | (value << 16) | (value << 8) | value);
 }
 
-uint32_t TextureSample(uint8_t* imgData, uint32_t imgWidth, uint32_t imgHeight, uint32_t imgNrChannels, float normX, float normY)
-{
-	uint32_t x = normX * imgWidth;
-	uint32_t y = normY * imgHeight;
-	uint32_t offset = (y * imgWidth + x) * imgNrChannels;
-	uint8_t r = imgData[offset + 0];
-	uint8_t g = imgData[offset + 1];
-	uint8_t b = imgData[offset + 2];
-	uint8_t a = imgData[offset + 3];
-	uint32_t color = (a << 24) | (r << 16) | (g << 8) | b;
-
-	return color;
-}
-
 uint32_t ApplyBrightness(uint32_t color, float intensity)
 {
 	uint8_t a = (uint8_t)(color >> 24);
@@ -212,21 +202,19 @@ float GetShadingIntensity(float dist)
 	return intensity;
 }
 
-void DrawWall(uint32_t* framebuffer, float texRepeatY, int32_t beginY, int32_t endY, uint32_t screenBeginY, uint32_t screenEndY, float xcoord, int32_t strip, float dist)
+void DrawWall(uint32_t* framebuffer, ray::TexturePtr texture, float texRepeatY, int32_t beginY, int32_t endY, uint32_t screenBeginY, uint32_t screenEndY, float xcoord, int32_t strip, float dist)
 {
 	// if texture should be stretched in y-dimension (height), then we need to determine how we should stretch it in x-dimension
-	float texHeightRatio = g_ImgHeight / (float)g_ImgWidth;
+	float texHeightRatio = texture->GetHeight() / (float)texture->GetWidth();
 	float texWidthUnits = g_CellSize / texHeightRatio;
+	float texHeightUnits = ((float)endY - beginY) / texRepeatY;
 	float textureX = fmodf(xcoord, texWidthUnits) / texWidthUnits;
 
 	for (int32_t i = screenBeginY; i < screenEndY; i++)
 	{
-		//float textureY = (i - beginY) / ((float)endY - beginY);
-		//float textureY = ((i - beginY) % baseWallHeightPx) / (float)baseWallHeightPx;
 		float ycoord = i - beginY;
-		float texHeightUnits = ((float)endY - beginY) / texRepeatY;
 		float textureY = fmodf(ycoord, texHeightUnits) / texHeightUnits;
-		uint32_t color = TextureSample(g_ImgData, g_ImgWidth, g_ImgHeight, g_ImgNrChannels, textureX, textureY);
+		uint32_t color = texture->Sample(textureX, textureY);
 
 		float intensity = GetShadingIntensity(dist);
 		//color = ApplyBrightness(color, intensity);
@@ -235,23 +223,19 @@ void DrawWall(uint32_t* framebuffer, float texRepeatY, int32_t beginY, int32_t e
 	}
 }
 
-uint8_t* g_FloorImgData = nullptr;
-uint32_t g_FloorImgWidth;
-uint32_t g_FloorImgHeight;
-uint32_t g_FloorImgNrChannels;
-uint32_t GetFloorColor(float worldX, float worldY)
+uint32_t GetFloorColor(ray::TexturePtr texture, float worldX, float worldY)
 {
-	float texHeightRatio = g_FloorImgHeight / (float)g_FloorImgWidth;
+	float texHeightRatio = texture->GetHeight() / (float)texture->GetWidth();
 	float texWidthUnits = g_CellSize / texHeightRatio;
 	float textureX = fmodf((float)worldX, texWidthUnits) / texWidthUnits;
 	float textureY = fmodf((float)worldY, g_CellSize) / (float)g_CellSize;
 
-	uint32_t color = TextureSample(g_FloorImgData, g_FloorImgWidth, g_FloorImgHeight, g_FloorImgNrChannels, textureX, textureY);
+	uint32_t color = texture->Sample(textureX, textureY);
 
 	return color;
 }
 
-void DrawFloor(uint32_t* framebuffer, float distToProjPlane, float worldAngle, float localAngle, uint32_t strip, uint32_t wallHeight, uint32_t beginY, uint32_t endY)
+void DrawFloor(uint32_t* framebuffer, ray::TexturePtr texture, float distToProjPlane, float worldAngle, float localAngle, uint32_t strip, uint32_t wallHeight, uint32_t beginY, uint32_t endY)
 {
 	for (int i = beginY; i < endY; i++)
 	{
@@ -283,7 +267,7 @@ void DrawFloor(uint32_t* framebuffer, float distToProjPlane, float worldAngle, f
 		float worldX = playerX + dx;
 		float worldY = playerY + dy;
 
-		uint32_t color = GetFloorColor(worldX, worldY);
+		uint32_t color = GetFloorColor(texture, worldX, worldY);
 		//uint32_t color = 0xFFCCCCCC;
 		float intensity = GetShadingIntensity(hyp);
 		//color = ApplyBrightness(color, intensity);
@@ -455,7 +439,6 @@ void Render(Uint32* framebuffer)
 			float texRepeatY = wallHeight / baseWallHeight;
 
 			float baseWallHeightNorm = (baseWallHeight / correctedDist) * distToProjPlane;
-			//uint32_t baseWallHeightPx = baseWallHeightNorm * SCREEN_HEIGHT;
 			uint32_t bottomWallHeightPx = std::ceil((baseWallHeightNorm * SCREEN_HEIGHT) / 2.0f);
 			uint32_t topWallHeightPx = wallHeightPx - bottomWallHeightPx;
 			maxTopWallHeightPx = std::max(maxTopWallHeightPx, topWallHeightPx);
@@ -467,7 +450,14 @@ void Render(Uint32* framebuffer)
 			uint32_t screenWallEndY = static_cast<uint32_t>(std::min(wallEndY, SCREEN_HEIGHT));
 			float xcoord = hCase ? hit.point.x : hit.point.y;
 
-			DrawWall(framebuffer, texRepeatY, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
+			ray::TextureManagerPtr textureManager = ray::TextureManager::GetInstance();
+			ray::TexturePtr wallTexture = textureManager->GetTexture(BUILDING_1);
+			if (wallTexture == nullptr)
+			{
+				return;
+			}
+
+			DrawWall(framebuffer, wallTexture, texRepeatY, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
 		}
 
 		// draw the ceiling/sky
@@ -478,10 +468,17 @@ void Render(Uint32* framebuffer)
 			framebuffer[i * SCREEN_WIDTH + strip] = color;
 		}
 
+		ray::TextureManagerPtr textureManager = ray::TextureManager::GetInstance();
+		ray::TexturePtr floorTexture = textureManager->GetTexture(WALL51_1);
+		if (floorTexture == nullptr)
+		{
+			return;
+		}
+
 		uint32_t floorBeginY = std::min(SCREEN_HEIGHT / 2 + (int32_t)maxBottomWallHeightPx, SCREEN_HEIGHT);
 		uint32_t floorEndY = SCREEN_HEIGHT;
 		if (floorBeginY < floorEndY)
-			DrawFloor(framebuffer, distToProjPlane, worldAngleRad, localAngleRad, strip, baseWallHeight, floorBeginY, floorEndY);
+			DrawFloor(framebuffer, floorTexture, distToProjPlane, worldAngleRad, localAngleRad, strip, baseWallHeight, floorBeginY, floorEndY);
 	}
 }
 
@@ -634,32 +631,14 @@ int main()
 	uint64_t targetFrameDur = (uint64_t)(1000.0f / targetFPS);
 	uint64_t lastTime = platform->GetElapsedMs();
 
-	// load test image
-	//const char* texturePath = "./assets/textures/bkred_1.png";
-	//const char* texturePath = "./assets/textures/brik_3.png";
-	//const char* texturePath = "./assets/textures/brks_1.png";
-	const char* texturePath = "./assets/textures/brks_00.png";
-	int32_t imgWidth;
-	int32_t imgHeight;
-	int32_t nrChannels;
-	uint8_t* imgData = stbi_load(texturePath, &imgWidth, &imgHeight, &nrChannels, 0);
-	assert(imgData);
+	ray::TextureManagerPtr textureManager = ray::TextureManager::GetInstance();
+	textureManager->LoadTexture(BKRED_1);
+	textureManager->LoadTexture(BUILDING_1);
+	textureManager->LoadTexture(BRIK_3);
+	textureManager->LoadTexture(BRKS_1);
+	textureManager->LoadTexture(BRKS_00);
+	textureManager->LoadTexture(WALL51_1);
 
-	g_ImgData = imgData;
-	g_ImgWidth = imgWidth;
-	g_ImgHeight = imgHeight;
-	g_ImgNrChannels = nrChannels;
-
-	//const char* floorTexturePath = "./assets/textures/wood1.png";
-	const char* floorTexturePath = "./assets/textures/wall52_1.png";
-	//g_FloorImgData = stbi_load(floorTexturePath, &g_FloorImgWidth, &g_FloorImgHeight, &g_FloorImgNrChannels, 0);
-	imgData = stbi_load(floorTexturePath, &imgWidth, &imgHeight, &nrChannels, 0);
-	assert(imgData);
-
-	g_FloorImgData = imgData;
-	g_FloorImgWidth = imgWidth;
-	g_FloorImgHeight = imgHeight;
-	g_FloorImgNrChannels = nrChannels;
 
 	while (running)
 	{
@@ -686,26 +665,6 @@ int main()
 
 		Render(framebuffer);
 
-		if (0)
-		{
-			for (int32_t y = 0; y < imgHeight; y++)
-			{
-				for (int32_t x = 0; x < imgWidth; x++)
-				{
-					uint32_t offset = (y * imgWidth + x) * nrChannels;
-					uint8_t r = imgData[offset];
-					uint8_t g = imgData[offset+1];
-					uint8_t b = imgData[offset+2];
-					uint8_t a = imgData[offset+3];
-
-					int32_t color = (a << 24) | (r << 16) | (g << 8) | b;
-					//uint32_t color = 0xFF000000 | (b << 16) | (g << 8) | r;
-
-					framebuffer[y * SCREEN_WIDTH + x] = color;
-				}
-			}
-		}
-
 		window->Draw();
 
 		uint64_t end = platform->GetPerformanceCounter();
@@ -724,7 +683,6 @@ int main()
 		}
 	}
 
-	stbi_image_free(imgData);
 	delete g_Level; // TODO: remove raw pointes
 
 	return 0;

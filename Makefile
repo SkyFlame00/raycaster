@@ -17,7 +17,8 @@ OBJS = $(BUILD)/main.o \
 	   $(BUILD)/Level.o \
 	   $(BUILD)/Platform.o \
 	   $(BUILD)/Window.o \
-	   $(BUILD)/stb_image_impl.o
+	   $(BUILD)/stb_image_impl.o \
+       $(BUILD)/TextureManager.o
 
 $(BUILD)/math.o: $(BUILD) $(SRC)/math/math.cpp
 	g++ $(CFLAGS) -c $(SRC)/math/math.cpp -o $(BUILD)/math.o
@@ -36,6 +37,9 @@ $(BUILD)/Window.o: $(BUILD) $(SRC)/Window.cpp
 
 $(BUILD)/stb_image_impl.o: $(BUILD) $(SRC)/stb_image_impl.cpp
 	g++ $(CFLAGS) -c $(SRC)/stb_image_impl.cpp -o $(BUILD)/stb_image_impl.o
+
+$(BUILD)/TextureManager.o: $(BUILD) $(SRC)/TextureManager.cpp
+	g++ $(CFLAGS) -c $(SRC)/TextureManager.cpp -o $(BUILD)/TextureManager.o
 
 $(BUILD)/main.o: $(BUILD) main.cpp
 	g++ $(CFLAGS) -c ./main.cpp -o $(BUILD)/main.o
