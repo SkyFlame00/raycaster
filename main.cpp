@@ -202,18 +202,20 @@ float GetShadingIntensity(float dist)
 	return intensity;
 }
 
-void DrawWall(uint32_t* framebuffer, ray::TexturePtr texture, float texRepeatY, int32_t beginY, int32_t endY, uint32_t screenBeginY, uint32_t screenEndY, float xcoord, int32_t strip, float dist)
+void DrawWall(uint32_t* framebuffer, ray::TexturePtr texture, float heightInBlocks, const Vec2& scale, const Vec2& offset, int32_t beginY, int32_t endY, uint32_t screenBeginY, uint32_t screenEndY, float xcoord, int32_t strip, float dist)
 {
-	// if texture should be stretched in y-dimension (height), then we need to determine how we should stretch it in x-dimension
-	float texHeightRatio = texture->GetHeight() / (float)texture->GetWidth();
-	float texWidthUnits = g_CellSize / texHeightRatio;
-	float texHeightUnits = ((float)endY - beginY) / texRepeatY;
-	float textureX = fmodf(xcoord, texWidthUnits) / texWidthUnits;
+	// (0, 0) is at the top-left of both the screen and texture
+	float blockSizeY = ((float)endY - beginY) / heightInBlocks;
+	float gameUnitSizeY = blockSizeY / g_CellSize;
+	float texWidthInGameUnits = g_CellSize * scale.x;
+	float texHeightInGameUnits = blockSizeY * scale.y;
+	float textureX = fmodf(xcoord + offset.x, texWidthInGameUnits) / texWidthInGameUnits;
 
 	for (int32_t i = screenBeginY; i < screenEndY; i++)
 	{
 		float ycoord = i - beginY;
-		float textureY = fmodf(ycoord, texHeightUnits) / texHeightUnits;
+		float offsetY = offset.y * gameUnitSizeY;
+		float textureY = fmodf(ycoord + offsetY, texHeightInGameUnits) / texHeightInGameUnits;
 		uint32_t color = texture->Sample(textureX, textureY);
 
 		float intensity = GetShadingIntensity(dist);
@@ -436,7 +438,7 @@ void Render(Uint32* framebuffer)
 			// Rounding (in our case - ceiling) also helps avoid a "teeth" effect when neighboring pixels differ by one texel.
 			int wallHeightPx = wallHeightNorm * SCREEN_HEIGHT;
 
-			float texRepeatY = wallHeight / baseWallHeight;
+			float heightInBlocks = wallHeight / baseWallHeight;
 
 			float baseWallHeightNorm = (baseWallHeight / correctedDist) * distToProjPlane;
 			uint32_t bottomWallHeightPx = std::ceil((baseWallHeightNorm * SCREEN_HEIGHT) / 2.0f);
@@ -457,7 +459,9 @@ void Render(Uint32* framebuffer)
 				return;
 			}
 
-			DrawWall(framebuffer, wallTexture, texRepeatY, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
+			Vec2 scale = {3.0f, 3.0f};
+			Vec2 offset = {0.0f, 64.0f};
+			DrawWall(framebuffer, wallTexture, heightInBlocks, scale, offset, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
 		}
 
 		// draw the ceiling/sky
