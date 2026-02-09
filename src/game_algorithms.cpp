@@ -13,7 +13,7 @@
 
 namespace ray
 {
-	void WallRaycastH(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits)
+	void WallRaycastH(const Vec2& origin, float angle, const ray::Level& level, std::vector<WallRaycastHit>& o_Hits)
 	{
 		const int32_t cellSize = level.GetCellSize();
 		const Vec2i originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
@@ -63,7 +63,7 @@ namespace ray
 		}
 	}
 
-	void WallRaycastV(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits)
+	void WallRaycastV(const Vec2& origin, float angle, const ray::Level& level, std::vector<WallRaycastHit>& o_Hits)
 	{
 		const int32_t cellSize = level.GetCellSize();
 		const Vec2i originCell = { (int)origin.x / cellSize, (int)origin.y / cellSize};
@@ -113,7 +113,7 @@ namespace ray
 		}
 	}
 
-	void WallRaycast(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits)
+	void WallRaycast(const Vec2& origin, float angle, const ray::Level& level, std::vector<WallRaycastHit>& o_Hits)
 	{
 		std::vector<WallRaycastHit> hHits;
 		std::vector<WallRaycastHit> vHits;

@@ -16,102 +16,15 @@
 #include "Level.h"
 #include "TextureManager.h"
 
-
-const char* g_RawLevelData1 =
-					"11111"\
-					"1   1"\
-					"1 P 1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"1   1"\
-					"11111";
-
-const char* g_RawLevelData = 
-                    "111111111111111111"\
-                    "1P  1            1"\
-                    "1   1            1"\
-                    "1         111111 1"\
-                    "1   1     1    1 1"\
-                    "11111     1      1"\
-                    "1         1    1 1"\
-                    "1         2    1 1"\
-                    "1              1 1"\
-                    "1         259  1 1"\
-                    "1         349111 1"\
-                    "1                1"\
-                    "1  111     111   1"\
-                    "1  111     111   1"\
-                    "1  111     111   1"\
-                    "1                1"\
-                    "111111111111111111";
-Level* g_Level = nullptr;
-
 const std::string BKRED_1 = "./assets/textures/bkred_1.png";
 const std::string BUILDING_1 = "./assets/textures/building-1.png";
 const std::string BRIK_3 = "./assets/textures/brik_3.png";
 const std::string BRKS_1 = "./assets/textures/brks_1.png";
 const std::string BRKS_00 = "./assets/textures/brks_00.png";
 const std::string WALL51_1 = "./assets/textures/wall52_1.png";
+
+const std::string LEVEL0 = "./assets/levels/test0.leveldata";
+const std::string LEVEL1 = "./assets/levels/test1.leveldata";
 
 class Player
 {
@@ -126,24 +39,16 @@ const int g_CellSize = 64; // TODO: remove
 Player g_Player;
 int g_FOV = 60;
 
-void MirrorLevelString(const char* src, char* dst)
+void SpawnPlayer(Player& player)
 {
-	for (int row = 0; row < LEVEL_ROWS; ++row)
-	{
-		for (int col = 0; col < LEVEL_COLS; ++col)
-		{
-			dst[(LEVEL_ROWS - 1 - row)*LEVEL_COLS + col] = src[row*LEVEL_COLS + col];
-		}
-	}
-}
+	ray::LevelPtr level = ray::LevelManager::GetInstance()->GetCurrentLevel();
+	const Vec2i levelSizeInCells = level->GetSizeInCells();
 
-void SpawnPlayer(Player& player, int rows, int cols)
-{
-	for (int row = 0; row < rows; row++)
+	for (int row = 0; row < levelSizeInCells.y; row++)
 	{
-		for (int col = 0; col < cols; col++)
+		for (int col = 0; col < levelSizeInCells.x; col++)
 		{
-			if (g_Level->GetAt(col, row) == 'P')
+			if (level->GetAt(col, row) == 'P')
 			{
 				float cellCenter = g_CellSize / 2.0f;
 				player.m_Pos.x = g_CellSize * col + cellCenter;
@@ -290,6 +195,7 @@ void Render(Uint32* framebuffer)
 
 	// The width of a single column
 	float stripWidth = projPlaneWidth / SCREEN_WIDTH;
+	ray::LevelPtr level = ray::LevelManager::GetInstance()->GetCurrentLevel();
 
 	for (int strip = 0; strip < SCREEN_WIDTH; strip++)
 	{
@@ -303,8 +209,8 @@ void Render(Uint32* framebuffer)
 		std::vector<ray::WallRaycastHit> hHits;
 		std::vector<ray::WallRaycastHit> vHits;
 
-		WallRaycastH(g_Player.m_Pos, worldAngleRad, *g_Level, hHits);
-		WallRaycastV(g_Player.m_Pos, worldAngleRad, *g_Level, vHits);
+		WallRaycastH(g_Player.m_Pos, worldAngleRad, *level, hHits);
+		WallRaycastV(g_Player.m_Pos, worldAngleRad, *level, vHits);
 
 		const bool hasHorIntersection = hHits.size() > 0;
 		const bool hasVerIntersection = vHits.size() > 0;
@@ -319,7 +225,7 @@ void Render(Uint32* framebuffer)
 		std::vector<ray::WallRaycastHit> hVisibleHits;
 		for (const ray::WallRaycastHit& hit : hHits)
 		{
-			float wallSize = g_Level->GetWallSize(hit.cell);
+			float wallSize = level->GetWallSize(hit.cell);
 
 			if (maxWallSize < wallSize)
 			{
@@ -332,7 +238,7 @@ void Render(Uint32* framebuffer)
 		std::vector<ray::WallRaycastHit> vVisibleHits;
 		for (const ray::WallRaycastHit& hit : vHits)
 		{
-			float wallSize = g_Level->GetWallSize(hit.cell);
+			float wallSize = level->GetWallSize(hit.cell);
 
 			if (maxWallSize < wallSize)
 			{
@@ -349,11 +255,11 @@ void Render(Uint32* framebuffer)
 		{
 			using HitVector = std::vector<ray::WallRaycastHit>;
 
-			auto nextVisibleHit = [maxWallSize](const HitVector& vec, HitVector::iterator iter)
+			auto nextVisibleHit = [maxWallSize, level](const HitVector& vec, HitVector::iterator iter)
 			{
 				for (; iter != vec.end(); ++iter)
 				{
-					const float wallSize = g_Level->GetWallSize(iter->cell);
+					const float wallSize = level->GetWallSize(iter->cell);
 					if (maxWallSize < wallSize)
 						break;
 				}
@@ -365,8 +271,8 @@ void Render(Uint32* framebuffer)
 
 			const bool hDraw = hIter != hVisibleHits.end();
 			const bool vDraw = vIter != vVisibleHits.end();
-			const float hWallSize = hDraw ? g_Level->GetWallSize(hIter->cell) : 0;
-			const float vWallSize = vDraw ? g_Level->GetWallSize(vIter->cell) : 0;
+			const float hWallSize = hDraw ? level->GetWallSize(hIter->cell) : 0;
+			const float vWallSize = vDraw ? level->GetWallSize(vIter->cell) : 0;
 			maxWallSize = std::max(maxWallSize, std::max(hWallSize, vWallSize));
 
 			if (hDraw && vDraw)
@@ -404,7 +310,7 @@ void Render(Uint32* framebuffer)
 		}
 
 		const float distToProjPlane = 1.0f;
-		const float baseWallHeight = g_Level->GetBaseWallHeight();
+		const float baseWallHeight = level->GetBaseWallHeight();
 
 		uint32_t maxTopWallHeightPx = 0;
 		uint32_t maxBottomWallHeightPx = 0;
@@ -429,7 +335,7 @@ void Render(Uint32* framebuffer)
 			// proj wall height / dist of player to proj plane = wall height / dist to wall
 			// dist of player to proj plane = 1
 			// proj wall height = wall height / dist to wall
-			const float wallHeight = g_Level->GetWallSize(hit.cell);
+			const float wallHeight = level->GetWallSize(hit.cell);
 			float wallHeightNorm = (wallHeight / correctedDist) * distToProjPlane;
 
 			// We ceil to the next integer to avoid an issue with floor texture mapping when a cast ray goes through the wall instead of below it.
@@ -553,6 +459,7 @@ void PhysicsFrame(float dt)
 	}
 
 	float speed = g_Player.m_Speed;
+	ray::LevelPtr level = ray::LevelManager::GetInstance()->GetCurrentLevel();
 	if (!IsZero(speed))
 	{
 		float normAngleDeg = NormalizeAngle(g_Player.m_MoveAngleDeg);
@@ -563,7 +470,7 @@ void PhysicsFrame(float dt)
 		Vec2 projPoint = { pos.x + dx, pos.y + dy };
 		
 		std::vector<ray::WallRaycastHit> hits;
-		WallRaycast(pos, angleRad, *g_Level, hits);
+		WallRaycast(pos, angleRad, *level, hits);
 
 		const bool found = hits.size() > 0;
 		if (!found)
@@ -599,12 +506,12 @@ void PhysicsFrame(float dt)
 		if (0)
 		{
 
-			bool bPrevSolidWall = g_Level->IsSolidWall(pos);
-			int cellSize = g_Level->GetCellSize();
+			bool bPrevSolidWall = level->IsSolidWall(pos);
+			int cellSize = level->GetCellSize();
 			Vec2i oldCell = { (int)(pos.x / cellSize), (int)(pos.y / cellSize) };
 			Vec2i newCell = { (int)(g_Player.m_Pos.x / cellSize), (int)(g_Player.m_Pos.y / cellSize) };
 
-			bool bSolidWall = g_Level->IsSolidWall(g_Player.m_Pos);
+			bool bSolidWall = level->IsSolidWall(g_Player.m_Pos);
 			if (bSolidWall)
 				std::printf("We're inside a solid wall");
 		}
@@ -624,13 +531,6 @@ int main()
 	bool running = true;
 	int frame = 0;
 
-	char levelData[LEVEL_ROWS*LEVEL_COLS];
-	Vec2i levelSize = { LEVEL_COLS * g_CellSize, LEVEL_ROWS * g_CellSize };
-	MirrorLevelString(g_RawLevelData, levelData);
-	g_Level = new Level(levelData, levelSize, (int32_t)g_CellSize);
-
-	SpawnPlayer(g_Player, LEVEL_ROWS, LEVEL_COLS);
-
 	float targetFPS = 18.0f;
 	uint64_t targetFrameDur = (uint64_t)(1000.0f / targetFPS);
 	uint64_t lastTime = platform->GetElapsedMs();
@@ -643,6 +543,11 @@ int main()
 	textureManager->LoadTexture(BRKS_00);
 	textureManager->LoadTexture(WALL51_1);
 
+	ray::LevelManagerPtr levelManager = ray::LevelManager::GetInstance();
+	ray::LevelPtr level0 = levelManager->LoadLevel(LEVEL0);
+	levelManager->StartLevel(level0);
+
+	SpawnPlayer(g_Player);
 
 	while (running)
 	{
@@ -686,8 +591,6 @@ int main()
 			SDL_Delay(targetFrameDur - perf);
 		}
 	}
-
-	delete g_Level; // TODO: remove raw pointes
 
 	return 0;
 }

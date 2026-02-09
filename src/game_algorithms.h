@@ -6,7 +6,11 @@
 
 struct Vec2;
 struct Vec2i;
-class Level;
+
+namespace ray
+{
+	class Level;
+}
 
 namespace ray
 {
@@ -17,10 +21,10 @@ namespace ray
 		bool isHor;
 	};
 
-	void WallRaycastH(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits);
+	void WallRaycastH(const Vec2& origin, float angle, const ray::Level& level, std::vector<WallRaycastHit>& o_Hits);
 
-	void WallRaycastV(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits);
+	void WallRaycastV(const Vec2& origin, float angle, const ray::Level& level, std::vector<WallRaycastHit>& o_Hits);
 
-	void WallRaycast(const Vec2& origin, float angle, const Level& level, std::vector<WallRaycastHit>& o_Hits);
+	void WallRaycast(const Vec2& origin, float angle, const ray::Level& level, std::vector<WallRaycastHit>& o_Hits);
 }
 

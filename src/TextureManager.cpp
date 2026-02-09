@@ -41,7 +41,7 @@ namespace ray
 	{
 		if (ms_Instance == nullptr)
 		{
-			ms_Instance = std::make_shared<TextureManager>();
+			ms_Instance = std::shared_ptr<TextureManager>(new TextureManager());
 		}
 
 		return ms_Instance;

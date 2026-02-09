@@ -32,12 +32,13 @@ namespace ray
 	public:
 		static TextureManagerPtr GetInstance();
 
+		~TextureManager();
+
 		TexturePtr LoadTexture(const std::string& path);
 		TexturePtr GetTexture(const std::string& path);
 
-		TextureManager();
-		~TextureManager();
 	private:
+		explicit TextureManager();
 
 		static std::shared_ptr<TextureManager> ms_Instance;
 		std::unordered_map<std::string, TexturePtr> m_Textures;
