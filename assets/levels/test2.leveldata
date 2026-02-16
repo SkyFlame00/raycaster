@@ -1,0 +1,30 @@
+HEADER
+-cell
+--char=1
+--texture_path=./assets/textures/building-1.png
+--height=1
+--floor_texture_path=./assets/textures/wall52_1.png
+-cell
+--char=9
+--texture_path=./assets/textures/building-2.png
+--height=10
+
+BODY
+11111111111111111111111111111111111111
+1                                    1
+1                                    1
+1                                    1
+1                                    1
+1             999                    1
+1             999                    1
+1             999                    1
+1                                    1
+1                                    1
+1                                    1
+1      P                             1
+1                                    1
+1                                    1
+1                                    1
+1                                    1
+1                                    1
+11111111111111111111111111111111111111

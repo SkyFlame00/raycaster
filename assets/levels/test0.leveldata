@@ -1,3 +1,31 @@
+HEADER
+-cell
+--char=1
+--texture_path=./assets/textures/building-1.png
+--height=1
+--floor_texture_path=./assets/textures/wall52_1.png
+-cell
+--char=2
+--texture_path=./assets/textures/building-1.png
+--height=2
+-cell
+--char=3
+--texture_path=./assets/textures/building-1.png
+--height=3
+-cell
+--char=4
+--texture_path=./assets/textures/building-1.png
+--height=4
+-cell
+--char=5
+--texture_path=./assets/textures/building-1.png
+--height=5
+-cell
+--char=9
+--texture_path=./assets/textures/building-2.png
+--height=9
+
+BODY
 111111111111111111
 1P  1            1
 1   1            1

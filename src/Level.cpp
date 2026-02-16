@@ -2,18 +2,42 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <sstream>
 
 #include "constants.h"
 
 namespace ray
 {
-	Level::Level(const char* data, const Vec2i& size, const Vec2i& sizeInCells, int32_t cellSize)
-		: m_Data(data)
-	    , m_Size(size)
-	    , m_SizeInCells(sizeInCells)
-	    , m_CellSize(cellSize)
+	namespace
+	{
+		std::string MirrorDataString(const std::string& src, uint32_t levelWidth, uint32_t levelHeight)
+		{
+			std::string dst;
+			dst.resize(src.length());
+
+			for (uint32_t row = 0; row < levelHeight; ++row)
+			{
+				for (uint32_t col = 0; col < levelWidth; ++col)
+				{
+					dst[(levelHeight - 1 - row) * levelWidth + col] = src[row * levelWidth + col];
+				}
+			}
+
+			return dst;
+		}
+	}
+
+	Level::Level(const std::string& data, int32_t cellSize)
+	    : m_CellSize(cellSize)
 	    , m_BaseWallHeight(64.0f)
 	{
+		Init(data);
+	}
+
+	void Level::Init(const std::string& data)
+	{
+		ParseLevelData(data);
 	}
 
 	bool Level::IsPointWithinBounds(const Vec2& point) const
@@ -42,41 +66,258 @@ namespace ray
 		return IsSolidWall(Vec2i({ cellX, cellY }));
 	}
 
+	char Level::GetAt(const Vec2i& vec) const
+	{
+		return GetAt(vec.x, vec.y);
+	}
+
 	char Level::GetAt(int x, int y) const
 	{
-		return m_Data[LEVEL_COLS*y + x];
+		return m_MapData[m_SizeInCells.x * y + x];
 	}
 
 	float Level::GetWallSize(const Vec2i cell) const
 	{
 		const char wallType = GetAt(cell.x, cell.y);
-		float size;
-
-		switch (wallType)
+		if (const CellTypeDef* def = GetCellTypeDef(wallType))
 		{
-			case '1':
-				size = m_BaseWallHeight;
+			return def->height * m_BaseWallHeight;
+		}
+		return m_BaseWallHeight;
+	}
+
+	void Level::ProcessDefItem(const DefItem& defItem)
+	{
+		CellTypeDef cellTypeDef;
+		TextureManagerPtr textureManager = TextureManager::GetInstance();
+
+		switch (defItem.type)
+		{
+			case DefItemType::CELL:
+				if (!defItem.cellType)
+				{
+					// report
+					return;
+				}
+
+				cellTypeDef.cellType = defItem.cellType;
+				cellTypeDef.wallTexture = textureManager->GetTexture(defItem.texturePath);
+				cellTypeDef.floorTexture = textureManager->GetTexture(defItem.floorTexturePath);
+				cellTypeDef.height = defItem.height;
+				
+				m_CellTypeDefinitions[defItem.cellType] = cellTypeDef;
+
 				break;
-			case '2':
-				size = m_BaseWallHeight * 2;
-				break;
-			case '3':
-				size = m_BaseWallHeight * 3;
-				break;
-			case '4':
-				size = m_BaseWallHeight * 4;
-				break;
-			case '5':
-				size = m_BaseWallHeight * 5;
-				break;
-			case '9':
-				size = m_BaseWallHeight * 9;
-				break;
+
+			case DefItemType::UNDEFINED:
 			default:
-				size = 0.0f;
+				// error
+				break;
+		}
+	}
+
+	bool Level::ParseLevelData(const std::string& data)
+	{
+		enum class ParsingStage
+		{
+			PARSING_HEADER,
+			PARSING_DEF_ITEM,
+			PARSING_BODY
+		};
+
+		ParsingStage stage = ParsingStage::PARSING_HEADER;
+		bool ok = true;
+		DefItem defItem;
+		uint32_t nline = 0;
+		std::string errorMessage;
+		std::size_t pos = 0;
+		std::size_t cols = m_SizeInCells.y;
+		std::size_t len = data.length();
+		int32_t levelWidth = 0;
+		int32_t levelHeight = 0;
+		std::string mapData;
+		std::string line;
+		std::istringstream stringstream{ data };
+
+		defItem.Reset(); // TODO: make a normal constructor instead of relying on Reset
+
+		while (std::getline(stringstream, line))
+		{
+			auto isEmptyString = [](const std::string& str)
+			{
+				for (char ch : str)
+					if (!std::isspace(ch))
+						return false;
+				return true;
+			};
+
+			if (isEmptyString(line))
+			{
+			}	
+			else if (stage == ParsingStage::PARSING_HEADER)
+			{
+				if (line == "HEADER")
+				{
+					stage = ParsingStage::PARSING_DEF_ITEM;
+				}
+				else
+				{
+					ok = false;
+					errorMessage = "There should be the \"HEADER\" token in the beginning of the file";
+				}
+			}
+			else if (stage == ParsingStage::PARSING_DEF_ITEM)
+			{
+				if (line == "BODY")
+				{
+					stage = ParsingStage::PARSING_BODY;
+					ProcessDefItem(defItem);
+					// mapData.reserve(...) - reserve space ahead of time
+				}
+				else
+				{
+					uint32_t nhyphen = 0;
+					for (char c : line)
+					{
+						if (c != '-')
+							break;
+						nhyphen++;
+					}
+
+					const bool bItemLevel0 = nhyphen == 1;
+					const bool bItemLevel1 = nhyphen == 2;
+					if (bItemLevel0)
+					{
+						if (defItem.writing)
+						{
+							ProcessDefItem(defItem);
+							defItem.Reset();
+						}
+
+						if (line == "-cell")
+						{
+							defItem.writing = true;
+							defItem.type = DefItemType::CELL;
+						}
+						else
+						{
+							ok = false;
+							errorMessage = "Unrecognized item of level 0";
+						}
+					}
+					else if (bItemLevel1)
+					{
+						// TODO: rewrite this function to extract the first token and its value instead of guessing
+						auto parseToken = [](const std::string& line, const std::string& token, std::string& stringValue)
+						{
+							bool bStartsWith = true;
+							for (size_t i = 0; i < token.length(); i++)
+							{
+								if (line[i] != token[i])
+								{
+									bStartsWith = false;
+									break;
+								}
+							}
+
+							if (bStartsWith)
+							{
+								if (line[token.length()] == '=')
+								{
+									stringValue = line.substr(token.length() + 1);
+									return true;
+								}
+								else
+								{
+									// error
+								}
+							}
+
+							return false;
+						};
+
+						const std::string TEXTURE_PATH_TOKEN = "--texture_path";
+						const std::string HEIGHT_TOKEN = "--height";
+						const std::string FLOOR_TEXTURE_PATH_TOKEN = "--floor_texture_path";
+						const std::string COORDS_TOKEN = "--coords";
+						const std::string CHAR_TOKEN = "--char";
+						std::string stringValue;
+						if (parseToken(line, TEXTURE_PATH_TOKEN, stringValue))
+						{
+							defItem.texturePath = stringValue;
+						}
+						else if (parseToken(line, HEIGHT_TOKEN, stringValue))
+						{
+							defItem.height = static_cast<uint32_t>(std::stoi(stringValue));
+						}
+						else if (parseToken(line, FLOOR_TEXTURE_PATH_TOKEN, stringValue))
+						{
+							defItem.floorTexturePath = stringValue;
+						}
+						else if (parseToken(line, COORDS_TOKEN, stringValue))
+						{
+							// find delimiter and extract two numbers
+						}
+						else if (parseToken(line, CHAR_TOKEN, stringValue))
+						{
+							defItem.cellType = stringValue[0];
+						}
+						else
+						{
+							ok = false;
+							errorMessage = "Unable to parse item of level 2";
+						}
+					}
+					else
+					{
+						ok = false;
+						errorMessage = "Unrecognized pattern encountered when parsing header";
+					}
+				}
+			}
+			else if (stage == ParsingStage::PARSING_BODY)
+			{
+				// determine player spawn
+				// save map data to in the level instance
+				mapData += line;
+				levelWidth = std::max(levelWidth, (int32_t)line.length());
+				levelHeight++;
+
+				for (char ch : line)
+				{
+					if (ch == 'P')
+					{
+						// place player
+						break;
+					}
+				}
+			}
+
+			if (!ok)
+				break;
+
+			nline++;
+			pos += cols;
 		}
 
-		return size;
+		m_MapData = MirrorDataString(mapData, levelWidth, levelHeight);
+		m_SizeInCells = { levelWidth, levelHeight };
+		m_Size = { levelWidth * static_cast<int32_t>(m_CellSize), levelHeight * static_cast<int32_t>(m_CellSize) };
+
+		if (!ok)
+		{
+			std::printf("ParseLevelData: error at line %d - %s", nline, errorMessage.c_str());
+		}
+
+		return ok;
+	}
+
+	const CellTypeDef* Level::GetCellTypeDef(uint8_t ch) const
+	{
+		auto iter = m_CellTypeDefinitions.find(ch);
+		if (iter != m_CellTypeDefinitions.end())
+			return &iter->second;
+		return nullptr;
 	}
 
 	// ===========================================================
@@ -119,39 +360,25 @@ namespace ray
 		uint32_t levelHeight = 0;
 		while (std::getline(file, line))
 		{
-			data += line;
+			//data += line;
+			data += (line + '\n');
 			levelWidth = std::max(levelWidth, static_cast<uint32_t>(line.length()));
 			levelHeight++;
 		}
 
 		file.close();
 
-		data = MirrorDataString(data, levelWidth, levelHeight);
+		//data = MirrorDataString(data, levelWidth, levelHeight);
 
 		uint32_t cellSize = 64;
-		Vec2i levelSizeInCells = { (int32_t)levelWidth, (int32_t)levelHeight };
-		Vec2i levelSize = { (int32_t)(levelWidth * cellSize), (int32_t)(levelHeight * cellSize) };
-		LevelPtr level = std::make_shared<Level>(data.c_str(), levelSize, levelSizeInCells, cellSize);
+		//Vec2i levelSizeInCells = { (int32_t)levelWidth, (int32_t)levelHeight };
+		//Vec2i levelSize = { (int32_t)(levelWidth * cellSize), (int32_t)(levelHeight * cellSize) };
+		//LevelPtr level = std::make_shared<Level>(data, levelSize, levelSizeInCells, cellSize);
+		LevelPtr level = std::make_shared<Level>(data, cellSize);
 
 		m_Levels[path] = level;
 
 		return level;
-	}
-
-	std::string LevelManager::MirrorDataString(const std::string& src, uint32_t levelWidth, uint32_t levelHeight)
-	{
-		std::string dst;
-		dst.resize(src.length());
-
-		for (uint32_t row = 0; row < levelHeight; ++row)
-		{
-			for (uint32_t col = 0; col < levelWidth; ++col)
-			{
-				dst[(levelHeight - 1 - row) * levelWidth + col] = src[row * levelWidth + col];
-			}
-		}
-
-		return dst;
 	}
 
 	void LevelManager::StartLevel(const LevelPtr level)

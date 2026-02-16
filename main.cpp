@@ -17,14 +17,16 @@
 #include "TextureManager.h"
 
 const std::string BKRED_1 = "./assets/textures/bkred_1.png";
-const std::string BUILDING_1 = "./assets/textures/building-1.png";
 const std::string BRIK_3 = "./assets/textures/brik_3.png";
 const std::string BRKS_1 = "./assets/textures/brks_1.png";
 const std::string BRKS_00 = "./assets/textures/brks_00.png";
 const std::string WALL51_1 = "./assets/textures/wall52_1.png";
+const std::string BUILDING_1 = "./assets/textures/building-1.png";
+const std::string BUILDING_2 = "./assets/textures/building-2.png";
 
 const std::string LEVEL0 = "./assets/levels/test0.leveldata";
 const std::string LEVEL1 = "./assets/levels/test1.leveldata";
+const std::string LEVEL2 = "./assets/levels/test2.leveldata";
 
 class Player
 {
@@ -48,7 +50,7 @@ void SpawnPlayer(Player& player)
 	{
 		for (int col = 0; col < levelSizeInCells.x; col++)
 		{
-			if (level->GetAt(col, row) == 'P')
+			if (level->GetAt(row, col) == 'P')
 			{
 				float cellCenter = g_CellSize / 2.0f;
 				player.m_Pos.x = g_CellSize * col + cellCenter;
@@ -358,13 +360,27 @@ void Render(Uint32* framebuffer)
 			uint32_t screenWallEndY = static_cast<uint32_t>(std::min(wallEndY, SCREEN_HEIGHT));
 			float xcoord = hCase ? hit.point.x : hit.point.y;
 
-			ray::TextureManagerPtr textureManager = ray::TextureManager::GetInstance();
-			ray::TexturePtr wallTexture = textureManager->GetTexture(BUILDING_1);
+			//ray::TextureManagerPtr textureManager = ray::TextureManager::GetInstance();
+			//ray::TexturePtr wallTexture = textureManager->GetTexture(BUILDING_1);
+			//if (wallTexture == nullptr)
+			//{
+			//	return;
+			//}
+
+			uint8_t ch = level->GetAt(hit.cell);
+			const ray::CellTypeDef* cellTypeDef = level->GetCellTypeDef(ch);
+			if (cellTypeDef == nullptr)
+			{
+				return;
+			}
+
+			ray::TexturePtr wallTexture = cellTypeDef->wallTexture;
 			if (wallTexture == nullptr)
 			{
 				return;
 			}
 
+			//Vec2 scale = {3.0f, 3.0f};
 			Vec2 scale = {3.0f, 3.0f};
 			Vec2 offset = {0.0f, 64.0f};
 			DrawWall(framebuffer, wallTexture, heightInBlocks, scale, offset, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
@@ -537,15 +553,17 @@ int main()
 
 	ray::TextureManagerPtr textureManager = ray::TextureManager::GetInstance();
 	textureManager->LoadTexture(BKRED_1);
-	textureManager->LoadTexture(BUILDING_1);
 	textureManager->LoadTexture(BRIK_3);
 	textureManager->LoadTexture(BRKS_1);
 	textureManager->LoadTexture(BRKS_00);
 	textureManager->LoadTexture(WALL51_1);
+	textureManager->LoadTexture(BUILDING_1);
+	textureManager->LoadTexture(BUILDING_2);
 
 	ray::LevelManagerPtr levelManager = ray::LevelManager::GetInstance();
 	ray::LevelPtr level0 = levelManager->LoadLevel(LEVEL0);
-	levelManager->StartLevel(level0);
+	ray::LevelPtr level2 = levelManager->LoadLevel(LEVEL2);
+	levelManager->StartLevel(level2);
 
 	SpawnPlayer(g_Player);
 
