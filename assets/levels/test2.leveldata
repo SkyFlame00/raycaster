@@ -1,30 +1,200 @@
 HEADER
 -cell
 --char=1
+--scale_x=3.0
+--scale_y=3.0
 --texture_path=./assets/textures/building-1.png
 --height=1
 --floor_texture_path=./assets/textures/wall52_1.png
 -cell
 --char=9
+--offset_x=64
+--scale_x=6.0
+--scale_y=8.0
 --texture_path=./assets/textures/building-2.png
+--height=16
+-cell
+--char=2
+--offset_x=256
+--offset_y=128
+--scale_x=4.0
+--scale_y=4.0
+--texture_path=./assets/textures/building_3.png
+--height=12
+-cell
+--char=S
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2.png
+-cell
+--char=#
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/asphalt_3.png
+-cell
+--char=H
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/road_hor_lanes.png
+-cell
+--char=V
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/road_ver_lanes.png
+-cell
+--char=z
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2_curb_0.png
+-cell
+--char=Z
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2_curb_90.png
+-cell
+--char=x
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2_curb_180.png
+-cell
+--char=X
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2_curb_270.png
+-cell
+--char=c
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2_corner_curb_0.png
+-cell
+--char=C
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2_corner_curb_90.png
+-cell
+--char=b
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2_corner_curb_180.png
+-cell
+--char=B
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_2_corner_curb_270.png
+-cell
+--char=q
+--scale_x=5.0
+--scale_y=10.0
+--texture_path=./assets/textures/building_4.png
 --height=10
+-cell
+--char=d
+--palette_color=gray
+--height=1
+-cell
+--char=Q
+--scale_x=4.0
+--scale_y=4.0
+--offset_x=64.0
+--texture_path=./assets/textures/building_5.png
+--height=8
+-cell
+--char=w
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=0.0
+--texture_path=./assets/textures/building_6.png
+--height=4
+-cell
+--char=W
+--scale_x=6.0
+--scale_y=6.0
+--offset_x=64.0
+--offset_y=0.0
+--texture_path=./assets/textures/building_8.png
+--height=12
+-cell
+--char=e
+--scale_x=1.0
+--scale_y=1.0
+--height=0
+--floor_texture_path=./assets/textures/pavement_3.png
+-cell
+--char=t
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=0.0
+--offset_y=0.0
+--texture_path=./assets/textures/building_9_1.png
+--height=4
 
 BODY
-11111111111111111111111111111111111111
-1                                    1
-1                                    1
-1                                    1
-1                                    1
-1             999                    1
-1             999                    1
-1             999                    1
-1                                    1
-1                                    1
-1                                    1
-1      P                             1
-1                                    1
-1                                    1
-1                                    1
-1                                    1
-1                                    1
-11111111111111111111111111111111111111
+11111111111111111111111111111111111111111111111111111111
+1        ###############################               1
+1        #V#CZZZZZZZZc#V################               1
+1        #V#xSSSSSSSSz#V#SSSSSSSS                      1
+1        #V#xS999999Sz#V#S222222S                      1
+1        #V#xS999999Sz#V#S222222S                      1
+1        #V#xS999999Sz#V#S222222S                      1
+1        #V#xS999999Sz#V#S222222S                      1
+1        #V#xS999999Sz#V#S222222S                      1
+1        #V#xS999999Sz#V#S222222S                      1
+1        #V#xSSSSSSSSz#V#SSSSSSSS                      1
+1      P #V#bXXXXXXXXB#V##########################     1
+1        #########################################     1
+1        HHHHHHHHHHHHH###HHHHHHHHHHHHHHHHHHHHHHHHH     1
+1        #########################################     1
+1        #V#CZZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc           1
+1        #V#xSSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz           1
+1        #V#xSqqqqqQQQQQQSz#V#xSttttttttttSz           1
+1        #V#xSqqqqqQQQQQQSz#V#xSttttttttttSz           1
+1        #V#xSqqqqqQQQQQQSz#V#xSddddddddddSz           1
+1        #V#xSqqqqqQQQQQQSz#V#xSddddddddddSz           1
+1        #V#xSqqqqqQQQQQQSz#V#xSddddddddddSz           1
+1        #V#xSdddddQQQQQQSz#V#xSSSSSSSSSSSSz           1
+1        #V#xSdddddQQQQQQSz#V#xSSSSSSSSSSSSz           1
+1           xSwwwwwQQQQQQSz#V#xSSSSSSSSSSSSz           1
+1           xSwwwwwQQQQQQSz#V#xSSSSSSSSSSSSz           1
+1           xSwwwwweeeeeeSz#V#xSSSSSSSSSSSSz           1
+1           xSwwwwweeeeeeSz#V#xSSSSSSSSSSSSz           1
+1           xSwwwwweeeeeeSz#V#xSSSSSSSSSSSSz           1
+1           xSwwwwweeeeeeSz#V#xSSSSSSSSSSSSz           1
+1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
+1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
+1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
+1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
+1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
+1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
+1           xSSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz           1
+1           bXXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB           1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+1                                                      1
+11111111111111111111111111111111111111111111111111111111

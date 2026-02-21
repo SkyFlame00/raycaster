@@ -8,6 +8,7 @@
 
 #include <stb/stb_image.h>
 
+#include "debug.h"
 #include "constants.h"
 #include "Platform.h"
 #include "Window.h"
@@ -23,6 +24,31 @@ const std::string BRKS_00 = "./assets/textures/brks_00.png";
 const std::string WALL51_1 = "./assets/textures/wall52_1.png";
 const std::string BUILDING_1 = "./assets/textures/building-1.png";
 const std::string BUILDING_2 = "./assets/textures/building-2.png";
+const std::string BUILDING_3 = "./assets/textures/building_3.png";
+const std::string BUILDING_4 = "./assets/textures/building_4.png";
+const std::string BUILDING_5 = "./assets/textures/building_5.png";
+const std::string BUILDING_6 = "./assets/textures/building_6.png";
+const std::string BUILDING_7 = "./assets/textures/building_7.png";
+const std::string BUILDING_8 = "./assets/textures/building_8.png";
+const std::string BUILDING_9_1 = "./assets/textures/building_9_1.png";
+
+const std::string PAVEMENT_1 = "./assets/textures/pavement_1.png";
+const std::string PAVEMENT_2 = "./assets/textures/pavement_2.png";
+const std::string ASPHALT_1 = "./assets/textures/asphalt_1.png";
+const std::string ASPHALT_2_1 = "./assets/textures/asphalt_2_1.png";
+const std::string ASPHALT_2_2 = "./assets/textures/asphalt_2_2.png";
+const std::string ASPHALT_3 = "./assets/textures/asphalt_3.png";
+const std::string ROAD_HOR_LANES = "./assets/textures/road_hor_lanes.png";
+const std::string ROAD_VER_LANES = "./assets/textures/road_ver_lanes.png";
+const std::string PAVEMENT_2_CURB_0 = "./assets/textures/pavement_2_curb_0.png";
+const std::string PAVEMENT_2_CURB_90 = "./assets/textures/pavement_2_curb_90.png";
+const std::string PAVEMENT_2_CURB_180 = "./assets/textures/pavement_2_curb_180.png";
+const std::string PAVEMENT_2_CURB_270 = "./assets/textures/pavement_2_curb_270.png";
+const std::string PAVEMENT_2_CORNER_CURB_0 = "./assets/textures/pavement_2_corner_curb_0.png";
+const std::string PAVEMENT_2_CORNER_CURB_90 = "./assets/textures/pavement_2_corner_curb_90.png";
+const std::string PAVEMENT_2_CORNER_CURB_180 = "./assets/textures/pavement_2_corner_curb_180.png";
+const std::string PAVEMENT_2_CORNER_CURB_270 = "./assets/textures/pavement_2_corner_curb_270.png";
+const std::string PAVEMENT_3 = "./assets/textures/pavement_3.png";
 
 const std::string LEVEL0 = "./assets/levels/test0.leveldata";
 const std::string LEVEL1 = "./assets/levels/test1.leveldata";
@@ -50,7 +76,7 @@ void SpawnPlayer(Player& player)
 	{
 		for (int col = 0; col < levelSizeInCells.x; col++)
 		{
-			if (level->GetAt(row, col) == 'P')
+			if (level->GetAt(col, row) == 'P')
 			{
 				float cellCenter = g_CellSize / 2.0f;
 				player.m_Pos.x = g_CellSize * col + cellCenter;
@@ -132,6 +158,17 @@ void DrawWall(uint32_t* framebuffer, ray::TexturePtr texture, float heightInBloc
 	}
 }
 
+void DrawWallColor(uint32_t* framebuffer, uint32_t color, uint32_t screenBeginY, uint32_t screenEndY, int32_t strip, float dist)
+{
+	for (int32_t i = screenBeginY; i < screenEndY; i++)
+	{
+		//float intensity = GetShadingIntensity(dist);
+		//color = ApplyBrightness(color, intensity);
+
+		framebuffer[i * SCREEN_WIDTH + strip] = color;
+	}
+}
+
 uint32_t GetFloorColor(ray::TexturePtr texture, float worldX, float worldY)
 {
 	float texHeightRatio = texture->GetHeight() / (float)texture->GetWidth();
@@ -139,12 +176,15 @@ uint32_t GetFloorColor(ray::TexturePtr texture, float worldX, float worldY)
 	float textureX = fmodf((float)worldX, texWidthUnits) / texWidthUnits;
 	float textureY = fmodf((float)worldY, g_CellSize) / (float)g_CellSize;
 
+	// Reversing textureY because (0, 0) for texture sampling is the left-top corner
+	textureY = 1.0f - textureY;
+
 	uint32_t color = texture->Sample(textureX, textureY);
 
 	return color;
 }
 
-void DrawFloor(uint32_t* framebuffer, ray::TexturePtr texture, float distToProjPlane, float worldAngle, float localAngle, uint32_t strip, uint32_t wallHeight, uint32_t beginY, uint32_t endY)
+void DrawFloor(uint32_t* framebuffer, ray::TexturePtr defaultTexture, float distToProjPlane, float worldAngle, float localAngle, uint32_t strip, uint32_t wallHeight, uint32_t beginY, uint32_t endY)
 {
 	for (int i = beginY; i < endY; i++)
 	{
@@ -176,6 +216,17 @@ void DrawFloor(uint32_t* framebuffer, ray::TexturePtr texture, float distToProjP
 		float worldX = playerX + dx;
 		float worldY = playerY + dy;
 
+		// get texture
+		ray::TexturePtr texture = defaultTexture;
+		ray::LevelPtr level = ray::LevelManager::GetInstance()->GetCurrentLevel();
+		const Vec2 vec = { worldX, worldY };
+		const char cellType = level->GetAt(vec);
+		const ray::CellTypeDef* cellTypeDef = level->GetCellTypeDef(cellType);
+		if (cellTypeDef && cellTypeDef->floorTexture && cellTypeDef->height == 0)
+		{
+			texture = cellTypeDef->floorTexture; 
+		}
+
 		uint32_t color = GetFloorColor(texture, worldX, worldY);
 		//uint32_t color = 0xFFCCCCCC;
 		float intensity = GetShadingIntensity(hyp);
@@ -183,6 +234,22 @@ void DrawFloor(uint32_t* framebuffer, ray::TexturePtr texture, float distToProjP
 
 		framebuffer[i * SCREEN_WIDTH + strip] = color;
 	}
+}
+
+uint32_t GetColorByString(const std::string str)
+{
+	std::unordered_map<std::string, uint32_t> colorMap =
+	{
+		{ "gray", 0xFFAAAAAA }
+	};
+	
+	auto iter = colorMap.find(str);
+	if (iter != colorMap.end())
+	{
+		return iter->second;
+	}
+
+	return 0xFFFF0000;
 }
 
 void Render(Uint32* framebuffer)
@@ -275,7 +342,7 @@ void Render(Uint32* framebuffer)
 			const bool vDraw = vIter != vVisibleHits.end();
 			const float hWallSize = hDraw ? level->GetWallSize(hIter->cell) : 0;
 			const float vWallSize = vDraw ? level->GetWallSize(vIter->cell) : 0;
-			maxWallSize = std::max(maxWallSize, std::max(hWallSize, vWallSize));
+			//maxWallSize = std::max(maxWallSize, std::max(hWallSize, vWallSize));
 
 			if (hDraw && vDraw)
 			{
@@ -288,25 +355,28 @@ void Render(Uint32* framebuffer)
 				if (hDist < vDist)
 				{
 					visibleHits.push_back(*hIter);
-					visibleHits.push_back(*vIter);
+					//visibleHits.push_back(*vIter);
+					maxWallSize = hWallSize;
+					hIter++;
 				}
 				else
 				{
 					visibleHits.push_back(*vIter);
-					visibleHits.push_back(*hIter);
+					//visibleHits.push_back(*hIter);
+					maxWallSize = vWallSize;
+					vIter++;
 				}
-
-				hIter++;
-				vIter++;
 			}
 			else if (hDraw)
 			{
 				visibleHits.push_back(*hIter);
+				maxWallSize = hWallSize;
 				hIter++;
 			}
 			else if (vDraw)
 			{
 				visibleHits.push_back(*vIter);
+				maxWallSize = vWallSize;
 				vIter++;
 			}
 		}
@@ -374,16 +444,31 @@ void Render(Uint32* framebuffer)
 				return;
 			}
 
-			ray::TexturePtr wallTexture = cellTypeDef->wallTexture;
-			if (wallTexture == nullptr)
+			if (cellTypeDef->paletteColor.empty())
 			{
-				return;
-			}
+				ray::TexturePtr wallTexture = cellTypeDef->wallTexture;
+				if (wallTexture == nullptr)
+				{
+					return;
+				}
 
-			//Vec2 scale = {3.0f, 3.0f};
-			Vec2 scale = {3.0f, 3.0f};
-			Vec2 offset = {0.0f, 64.0f};
-			DrawWall(framebuffer, wallTexture, heightInBlocks, scale, offset, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
+				//Vec2 scale = {3.0f, 3.0f};
+				//Vec2 scale = {3.0f, 3.0f};
+				//Vec2 scale = {6.0f, 6.0f};
+				//Vec2 offset = {0.0f, 64.0f};
+				int32_t offsetX = cellTypeDef->offsetX;
+				int32_t offsetY = cellTypeDef->offsetY;
+				Vec2 offset = { (float)offsetX, (float)offsetY };
+				float scaleX = cellTypeDef->scaleX;
+				float scaleY = cellTypeDef->scaleY;
+				Vec2 scale = { scaleX, scaleY };
+				DrawWall(framebuffer, wallTexture, heightInBlocks, scale, offset, wallBeginY, wallEndY, screenWallBeginY, screenWallEndY, xcoord, strip, correctedDist);
+			}
+			else
+			{
+				const uint32_t color = GetColorByString(cellTypeDef->paletteColor);
+				DrawWallColor(framebuffer, color, screenWallBeginY, screenWallEndY, strip, correctedDist);
+			}
 		}
 
 		// draw the ceiling/sky
@@ -405,6 +490,18 @@ void Render(Uint32* framebuffer)
 		uint32_t floorEndY = SCREEN_HEIGHT;
 		if (floorBeginY < floorEndY)
 			DrawFloor(framebuffer, floorTexture, distToProjPlane, worldAngleRad, localAngleRad, strip, baseWallHeight, floorBeginY, floorEndY);
+
+		// Debug: draw a red strip at the desired position
+		if (0 && strip == SCREEN_WIDTH / 2)
+		{
+			for (int i = 0; i < SCREEN_HEIGHT; i++)
+			{
+				uint32_t color = framebuffer[i * SCREEN_WIDTH + strip];
+				color = color | (0x00FF0000);
+				//color = (0xFFFF0000);
+				framebuffer[i * SCREEN_WIDTH + strip] = color;
+			}
+		}
 	}
 }
 
@@ -414,7 +511,8 @@ void HandleInput(float dt)
 
 	const Uint8* state = SDL_GetKeyboardState(nullptr);
 	const float rotationSpeed = 180.0f; // 180 degrees per second
-	const float moveSpeed = 200.0f * dt;
+	//const float moveSpeed = 200.0f * dt;
+	const float moveSpeed = 400.0f * dt;
 
 	g_Player.m_Speed = 0.0f;
 
@@ -559,6 +657,31 @@ int main()
 	textureManager->LoadTexture(WALL51_1);
 	textureManager->LoadTexture(BUILDING_1);
 	textureManager->LoadTexture(BUILDING_2);
+	textureManager->LoadTexture(BUILDING_3);
+	textureManager->LoadTexture(BUILDING_4);
+	textureManager->LoadTexture(BUILDING_5);
+	textureManager->LoadTexture(BUILDING_6);
+	textureManager->LoadTexture(BUILDING_7);
+	textureManager->LoadTexture(BUILDING_8);
+	textureManager->LoadTexture(BUILDING_9_1);
+
+	textureManager->LoadTexture(PAVEMENT_1);
+	textureManager->LoadTexture(PAVEMENT_2);
+	textureManager->LoadTexture(ASPHALT_1);
+	textureManager->LoadTexture(ASPHALT_2_1);
+	textureManager->LoadTexture(ASPHALT_2_2);
+	textureManager->LoadTexture(ASPHALT_3);
+	textureManager->LoadTexture(ROAD_HOR_LANES);
+	textureManager->LoadTexture(ROAD_VER_LANES);
+	textureManager->LoadTexture(PAVEMENT_2_CURB_0);
+	textureManager->LoadTexture(PAVEMENT_2_CURB_90);
+	textureManager->LoadTexture(PAVEMENT_2_CURB_180);
+	textureManager->LoadTexture(PAVEMENT_2_CURB_270);
+	textureManager->LoadTexture(PAVEMENT_2_CORNER_CURB_0);
+	textureManager->LoadTexture(PAVEMENT_2_CORNER_CURB_90);
+	textureManager->LoadTexture(PAVEMENT_2_CORNER_CURB_180);
+	textureManager->LoadTexture(PAVEMENT_2_CORNER_CURB_270);
+	textureManager->LoadTexture(PAVEMENT_3);
 
 	ray::LevelManagerPtr levelManager = ray::LevelManager::GetInstance();
 	ray::LevelPtr level0 = levelManager->LoadLevel(LEVEL0);
@@ -602,7 +725,7 @@ int main()
 
 		//std::printf("FPS: %.2f\n", 1000.0f / (float)diff);
 		double p = (double)(end - start) / (double)platform->GetPerformanceFrequency();
-		std::printf("FPS: %.10f\n", 1.0f/p);
+		//std::printf("FPS: %.10f\n", 1.0f/p);
 
 		if (perf < targetFrameDur)
 		{

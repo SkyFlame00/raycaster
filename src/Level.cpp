@@ -48,15 +48,23 @@ namespace ray
 
 	bool Level::IsCellWithinBounds(const Vec2i& cell) const
 	{
-		return 0 <= cell.x && cell.x <= m_Size.x
-			&& 0 <= cell.y && cell.y <= m_Size.y;
+		return 0 <= cell.x && cell.x < m_SizeInCells.x
+			&& 0 <= cell.y && cell.y < m_SizeInCells.y;
 	}
 
 	bool Level::IsSolidWall(const Vec2i& cell) const
 	{
 		const char wallType = GetAt(cell.x, cell.y);
-		return wallType == '1' || wallType == '2' || wallType == '3'
-			|| wallType == '4' || wallType == '5' || wallType == '9';
+
+		if (const CellTypeDef* def = GetCellTypeDef(wallType))
+		{
+			return def->height > 0;
+		}
+
+		return false;
+		//return wallType == '1' || wallType == '2' || wallType == '3'
+		//	|| wallType == '4' || wallType == '5' || wallType == '9'
+		//	|| wallType == 'q';
 	}
 
 	bool Level::IsSolidWall(const Vec2& pos) const
@@ -74,6 +82,14 @@ namespace ray
 	char Level::GetAt(int x, int y) const
 	{
 		return m_MapData[m_SizeInCells.x * y + x];
+	}
+
+	char Level::GetAt(const Vec2& vec) const
+	{
+		int32_t x = static_cast<int32_t>(vec.x) / m_CellSize;
+		int32_t y = static_cast<int32_t>(vec.y) / m_CellSize;
+
+		return GetAt(x, y);
 	}
 
 	float Level::GetWallSize(const Vec2i cell) const
@@ -103,7 +119,12 @@ namespace ray
 				cellTypeDef.cellType = defItem.cellType;
 				cellTypeDef.wallTexture = textureManager->GetTexture(defItem.texturePath);
 				cellTypeDef.floorTexture = textureManager->GetTexture(defItem.floorTexturePath);
+				cellTypeDef.paletteColor = defItem.paletteColor;
 				cellTypeDef.height = defItem.height;
+				cellTypeDef.offsetX = defItem.offsetX;
+				cellTypeDef.offsetY = defItem.offsetY;
+				cellTypeDef.scaleX = defItem.scaleX;
+				cellTypeDef.scaleY = defItem.scaleY;
 				
 				m_CellTypeDefinitions[defItem.cellType] = cellTypeDef;
 
@@ -241,6 +262,11 @@ namespace ray
 						const std::string FLOOR_TEXTURE_PATH_TOKEN = "--floor_texture_path";
 						const std::string COORDS_TOKEN = "--coords";
 						const std::string CHAR_TOKEN = "--char";
+						const std::string OFFSET_X_TOKEN = "--offset_x";
+						const std::string OFFSET_Y_TOKEN = "--offset_y";
+						const std::string SCALE_X_TOKEN = "--scale_x";
+						const std::string SCALE_Y_TOKEN = "--scale_y";
+						const std::string PALETTE_COLOR = "--palette_color";
 						std::string stringValue;
 						if (parseToken(line, TEXTURE_PATH_TOKEN, stringValue))
 						{
@@ -261,6 +287,26 @@ namespace ray
 						else if (parseToken(line, CHAR_TOKEN, stringValue))
 						{
 							defItem.cellType = stringValue[0];
+						}
+						else if (parseToken(line, OFFSET_X_TOKEN, stringValue))
+						{
+							defItem.offsetX = std::stoi(stringValue);
+						}
+						else if (parseToken(line, OFFSET_Y_TOKEN, stringValue))
+						{
+							defItem.offsetY = std::stoi(stringValue);
+						}
+						else if (parseToken(line, SCALE_X_TOKEN, stringValue))
+						{
+							defItem.scaleX = std::stof(stringValue);
+						}
+						else if (parseToken(line, SCALE_Y_TOKEN, stringValue))
+						{
+							defItem.scaleY = std::stof(stringValue);
+						}
+						else if (parseToken(line, PALETTE_COLOR, stringValue))
+						{
+							defItem.paletteColor = stringValue;
 						}
 						else
 						{

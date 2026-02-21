@@ -6,10 +6,12 @@
  * 4. Check if the game cell, where the point is located, is solid. If it isn't, go to (2). If it is, end search since we have found the closest intersection point 
  */
 
+#include <cmath>
+
+#include "debug.h"
 #include "game_algorithms.h"
 #include "Level.h"
 #include "math/math.h"
-#include <cmath>
 
 namespace ray
 {
@@ -44,11 +46,21 @@ namespace ray
 			int cellY = curY / cellSize - (bDownwardCast ? 1 : 0);
 			Vec2i cell = { cellX, cellY };
 
-			//if (!level.IsCellWithinBounds(cell))
-			//	return;
-
-			if (!level.IsPointWithinBounds({ x, curY }))
+			if (x < 0.0f)
 				return;
+
+			if (!level.IsCellWithinBounds(cell))
+				return;
+
+			// Cell check gives a more precise result because the cell being checked
+			// might actually be out-of-bounds (if curY == 0 and we have a downward cast,
+			// then cellY will be -1 which will lead to bugs)
+			// So, commenting out this for the time being
+			//if (!level.IsPointWithinBounds({ x, curY }))
+			//{
+			//	DEBUG_BREAK;
+			//	return;
+			//}
 
 			if (level.IsSolidWall(cell))
 			{
@@ -94,11 +106,18 @@ namespace ray
 			int cellY = y / cellSize;
 			Vec2i cell = { cellX, cellY };
 
-			//if (!level.IsCellWithinBounds(cell))
-			//	break;
-
-			if (!level.IsPointWithinBounds({ curX, y }))
+			if (y < 0.0f)
 				return;
+
+			if (!level.IsCellWithinBounds(cell))
+				return;
+
+			// Same as in WallRaycastH
+			//if (!level.IsPointWithinBounds({ curX, y }))
+			//{
+			//	DEBUG_BREAK;
+			//	return;
+			//}
 
 			if (level.IsSolidWall(cell))
 			{

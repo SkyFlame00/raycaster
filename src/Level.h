@@ -31,7 +31,12 @@ namespace ray
 		uint8_t cellType;
 		std::string texturePath;
 		std::string floorTexturePath;
+		std::string paletteColor;
 		uint32_t height;
+		int32_t offsetX;
+		int32_t offsetY;
+		float scaleX;
+		float scaleY;
 
 		void Reset()
 		{
@@ -40,7 +45,12 @@ namespace ray
 			cellType = 0;
 			texturePath = "";
 			floorTexturePath = "";
+			paletteColor = "";
 			height = 0u;
+			offsetX = 0;
+			offsetY = 0;
+			scaleX = 1.0f;
+			scaleY = 1.0f;
 		}
 	};
 
@@ -50,13 +60,23 @@ namespace ray
 			: cellType(0)
 			, wallTexture(nullptr)
 			, floorTexture(nullptr)
+			, paletteColor("")
 			, height(0u)
+			, offsetX(0)
+			, offsetY(0)
+			, scaleX(1.0f)
+			, scaleY(1.0f)
 		{}
 
 		uint8_t cellType;
 		TexturePtr wallTexture;
 		TexturePtr floorTexture;
+		std::string paletteColor;
 		uint32_t height;
+		int32_t offsetX;
+		int32_t offsetY;
+		float scaleX;
+		float scaleY;
 	};
 
 	struct CellDefinition
@@ -76,6 +96,7 @@ namespace ray
 		bool IsSolidWall(const Vec2& pos) const;
 		char GetAt(const Vec2i& vec) const;
 		char GetAt(int x, int y) const;
+		char GetAt(const Vec2& vec) const;
 		Vec2i GetSize() const { return m_Size; }
 		Vec2i GetSizeInCells() const { return m_SizeInCells; }
 		int32_t GetCellSize() const { return m_CellSize; }
