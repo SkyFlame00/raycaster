@@ -1,5 +1,5 @@
 #CFLAGS = -g -fdiagnostics-color=always -Iexternal -Isrc
-CFLAGS = -g -Iexternal -Isrc
+CFLAGS = -g -Iexternal -Isrc -std=c++17
 BUILD = build
 SRC = src
 BIN = bin

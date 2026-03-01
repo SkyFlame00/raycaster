@@ -3,198 +3,536 @@ HEADER
 --char=1
 --scale_x=3.0
 --scale_y=3.0
---texture_path=./assets/textures/building-1.png
+--texture_path=building-1.png
 --height=1
---floor_texture_path=./assets/textures/wall52_1.png
+--floor_texture_path=wall52_1.png
 -cell
 --char=9
---offset_x=64
---scale_x=6.0
---scale_y=8.0
---texture_path=./assets/textures/building-2.png
---height=16
+--offset_x=0
+--offset_y=48
+--scale_x=4.5
+--scale_y=6.0
+--texture_path=building-2.png
+--height=32
 -cell
 --char=2
---offset_x=256
---offset_y=128
---scale_x=4.0
---scale_y=4.0
---texture_path=./assets/textures/building_3.png
---height=12
+--offset_x=0
+--offset_y=32
+--scale_x=3.0
+--scale_y=3.0
+--texture_path=building_3.png
+--height=8
 -cell
 --char=S
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2.png
+--floor_texture_path=pavement_2.png
 -cell
 --char=#
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/asphalt_3.png
+--floor_texture_path=asphalt_3.png
 -cell
 --char=H
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/road_hor_lanes.png
+--floor_texture_path=road_hor_lanes.png
 -cell
 --char=V
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/road_ver_lanes.png
+--floor_texture_path=road_ver_lanes.png
 -cell
 --char=z
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2_curb_0.png
+--floor_texture_path=pavement_2_curb_0.png
 -cell
 --char=Z
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2_curb_90.png
+--floor_texture_path=pavement_2_curb_90.png
 -cell
 --char=x
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2_curb_180.png
+--floor_texture_path=pavement_2_curb_180.png
 -cell
 --char=X
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2_curb_270.png
+--floor_texture_path=pavement_2_curb_270.png
 -cell
 --char=c
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2_corner_curb_0.png
+--floor_texture_path=pavement_2_corner_curb_0.png
 -cell
 --char=C
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2_corner_curb_90.png
+--floor_texture_path=pavement_2_corner_curb_90.png
 -cell
 --char=b
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2_corner_curb_180.png
+--floor_texture_path=pavement_2_corner_curb_180.png
 -cell
 --char=B
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_2_corner_curb_270.png
+--floor_texture_path=pavement_2_corner_curb_270.png
 -cell
 --char=q
---scale_x=5.0
---scale_y=10.0
---texture_path=./assets/textures/building_4.png
---height=10
+--scale_x=3.0
+--scale_y=6.0
+--texture_path=building_4.png
+--height=6
 -cell
 --char=d
 --palette_color=gray
 --height=1
 -cell
 --char=Q
---scale_x=4.0
---scale_y=4.0
---offset_x=64.0
---texture_path=./assets/textures/building_5.png
---height=8
--cell
---char=w
 --scale_x=2.0
---scale_y=4.0
+--scale_y=2.0
 --offset_x=0.0
---texture_path=./assets/textures/building_6.png
+--texture_path=building_5.png
 --height=4
 -cell
+--char=w
+--scale_x=1.0
+--scale_y=2.0
+--offset_x=0.0
+--texture_path=building_6.png
+--height=2
+-cell
 --char=W
---scale_x=6.0
---scale_y=6.0
---offset_x=64.0
+--scale_x=3.0
+--scale_y=3.0
+--offset_x=0.0
 --offset_y=0.0
---texture_path=./assets/textures/building_8.png
---height=12
+--texture_path=building_8.png
+--height=6
 -cell
 --char=e
 --scale_x=1.0
 --scale_y=1.0
 --height=0
---floor_texture_path=./assets/textures/pavement_3.png
+--floor_texture_path=pavement_3.png
 -cell
 --char=t
 --scale_x=2.0
 --scale_y=4.0
 --offset_x=0.0
 --offset_y=0.0
---texture_path=./assets/textures/building_9_1.png
+--texture_path=building_9_1.png
 --height=4
+-cell
+--char=T
+--scale_x=3.0
+--scale_y=5.0
+--offset_x=64.0
+--texture_path=building_10.png
+--height=5
+-cell
+--char=Y
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=0.0
+--texture_path=building_11.png
+--height=4
+-cell
+--char=y
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=64.0
+--texture_path=building_12.png
+--height=4
+-cell
+--char=u
+--scale_x=6.0
+--scale_y=3.0
+--offset_x=0.0
+--texture_path=office_building_2.png
+--height=6
+-cell
+--char=U
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=0.0
+--texture_path=building_13.png
+--height=4
+-cell
+--char=i
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=0.0
+--texture_path=building_14.png
+--height=4
+-cell
+--char=I
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=64.0
+--texture_path=building_15.png
+--height=4
+-cell
+--char=o
+--scale_x=3.0
+--scale_y=4.5
+--offset_x=0.0
+--offset_y=32.0
+--texture_path=office_building_3.png
+--height=10
+-cell
+--char=O
+--scale_x=10.0
+--scale_y=5.0
+--offset_x=0.0
+--offset_y=0.0
+--texture_path=office_building_1.png
+--height=10
+-cell
+--char=p
+--scale_x=8.0
+--scale_y=4.0
+--offset_x=0.0
+--offset_y=0.0
+--texture_path=office_building_5.png
+--height=32
+-cell
+--char=a
+--scale_x=2.0
+--scale_y=3.0
+--texture_path=office_building_4.png
+--height=9
+-cell
+--char=A
+--scale_x=4.0
+--scale_y=6.0
+--texture_path=office_building_7.png
+--height=24
+-cell
+--char=D
+--scale_x=2.0
+--scale_y=4.0
+--texture_path=office_building_6.png
+--height=6
+-cell
+--char=f
+--scale_x=10.0
+--scale_y=5.0
+--texture_path=office_building_8.png
+--height=16
+-cell
+--char=F
+--scale_x=3.0
+--scale_y=6.0
+--texture_path=office_building_10.png
+--height=24
+-cell
+--char=g
+--scale_x=4.0
+--scale_y=2.0
+--texture_path=office_building_11.png
+--height=20
+-cell
+--char=G
+--scale_x=6.0
+--scale_y=9.0
+--texture_path=office_building_12.png
+--height=9
+-cell
+--char=j
+--scale_x=8.0
+--scale_y=12.0
+--offset_x=24.0
+--texture_path=office_building_14.png
+--height=24
+-cell
+--char=J
+--scale_x=10.0
+--scale_y=10.0
+--texture_path=office_building_15.png
+--height=20
+-cell
+--char=k
+--scale_x=8.0
+--scale_y=8.0
+--texture_path=office_building_16.png
+--height=16
+-cell
+--char=K
+--scale_x=6.0
+--scale_y=9.0
+--texture_path=office_building_17.png
+--height=18
+-cell
+--char=L
+--scale_x=4.0
+--scale_y=6.0
+--texture_path=building_16.png
+--height=6
+-cell
+--char=h
+--scale_x=4.0
+--scale_y=6.0
+--offset_x=0.0
+--texture_path=building_17.png
+--height=6
+-cell
+--char=l
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=64.0
+--texture_path=building_18.png
+--height=4
+-cell
+--char=;
+--scale_x=2.0
+--scale_y=4.0
+--offset_x=64.0
+--texture_path=building_19.png
+--height=4
+-cell
+--char=:
+--scale_x=4.0
+--scale_y=4.0
+--offset_x=64.0
+--texture_path=office_building_18.png
+--height=20
+-cell
+--char='
+--scale_x=4.0
+--scale_y=6.0
+--offset_x=0.0
+--texture_path=building_20.png
+--height=6
+-cell
+--char="
+--scale_x=6.0
+--scale_y=9.0
+--offset_x=64.0
+--texture_path=office_building_19.png
+--height=9
+-cell
+--char=N
+--scale_x=4.0
+--scale_y=16.0
+--offset_x=64.0
+--texture_path=office_building_21.png
+--height=16
+-cell
+--char=n
+--scale_x=6.0
+--scale_y=9.0
+--offset_x=0.0
+--texture_path=office_building_20.png
+--height=9
+-cell
+--char=M
+--scale_x=8.0
+--scale_y=14.0
+--offset_x=0.0
+--texture_path=office_building_22.png
+--height=14
+-cell
+--char=m
+--scale_x=2.0
+--scale_y=6.0
+--offset_x=0.0
+--texture_path=office_building_23.png
+--height=6
+-cell
+--char=,
+--scale_x=4.0
+--scale_y=16.0
+--offset_x=0.0
+--texture_path=office_building_24.png
+--height=16
+-cell
+--char=>
+--scale_x=2.0
+--scale_y=5.0
+--offset_x=64.0
+--texture_path=office_building_25.png
+--height=5
+-cell
+--char=.
+--scale_x=2.0
+--scale_y=6.0
+--offset_x=64.0
+--texture_path=office_building_26.png
+--height=6
+-cell
+--char=<
+--scale_x=6.0
+--scale_y=4.0
+--offset_x=0.0
+--texture_path=building_22.png
+--height=4
+-cell
+--char=/
+--scale_x=4.0
+--scale_y=8.0
+--offset_x=64.0
+--texture_path=office_building_27.png
+--height=8
+-cell
+--char=3
+--scale_x=6.0
+--scale_y=4.0
+--offset_x=0.0
+--texture_path=building_23.png
+--height=4
+-cell
+--char=4
+--scale_x=4.0
+--scale_y=16.0
+--offset_x=0.0
+--texture_path=office_building_29.png
+--height=16
+-cell
+--char=5
+--scale_x=10.0
+--scale_y=30.0
+--offset_x=480.0
+--texture_path=office_building_30.png
+--height=30
+-cell
+--char=6
+--scale_x=8.0
+--scale_y=12.0
+--offset_x=384.0
+--texture_path=office_building_31.png
+--height=12
 
 BODY
-11111111111111111111111111111111111111111111111111111111
-1        ###############################               1
-1        #V#CZZZZZZZZc#V################               1
-1        #V#xSSSSSSSSz#V#SSSSSSSS                      1
-1        #V#xS999999Sz#V#S222222S                      1
-1        #V#xS999999Sz#V#S222222S                      1
-1        #V#xS999999Sz#V#S222222S                      1
-1        #V#xS999999Sz#V#S222222S                      1
-1        #V#xS999999Sz#V#S222222S                      1
-1        #V#xS999999Sz#V#S222222S                      1
-1        #V#xSSSSSSSSz#V#SSSSSSSS                      1
-1      P #V#bXXXXXXXXB#V##########################     1
-1        #########################################     1
-1        HHHHHHHHHHHHH###HHHHHHHHHHHHHHHHHHHHHHHHH     1
-1        #########################################     1
-1        #V#CZZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc           1
-1        #V#xSSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz           1
-1        #V#xSqqqqqQQQQQQSz#V#xSttttttttttSz           1
-1        #V#xSqqqqqQQQQQQSz#V#xSttttttttttSz           1
-1        #V#xSqqqqqQQQQQQSz#V#xSddddddddddSz           1
-1        #V#xSqqqqqQQQQQQSz#V#xSddddddddddSz           1
-1        #V#xSqqqqqQQQQQQSz#V#xSddddddddddSz           1
-1        #V#xSdddddQQQQQQSz#V#xSSSSSSSSSSSSz           1
-1        #V#xSdddddQQQQQQSz#V#xSSSSSSSSSSSSz           1
-1           xSwwwwwQQQQQQSz#V#xSSSSSSSSSSSSz           1
-1           xSwwwwwQQQQQQSz#V#xSSSSSSSSSSSSz           1
-1           xSwwwwweeeeeeSz#V#xSSSSSSSSSSSSz           1
-1           xSwwwwweeeeeeSz#V#xSSSSSSSSSSSSz           1
-1           xSwwwwweeeeeeSz#V#xSSSSSSSSSSSSz           1
-1           xSwwwwweeeeeeSz#V#xSSSSSSSSSSSSz           1
-1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
-1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
-1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
-1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
-1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
-1           xSWWWWWWWWWWWSz#V#xSSSSSSSSSSSSz           1
-1           xSSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz           1
-1           bXXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB           1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-1                                                      1
-11111111111111111111111111111111111111111111111111111111
+11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+1                                                                                                                                    1
+1                                                                                                                                    1
+1                                                                                                                                    1
+1        #V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSAAAAAAAAAASz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSAAAAAAAAAASz#V#xSFFFFFFFFFFSz#V#xSggggggggggSz#V#xS::::::::::Sz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSAAAAAAAAAASz#V#xSFFFFFFFFFFSz#V#xSggggggggggSz#V#xS::::::::::Sz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSAAAAAAAAAASz#V#xSFFFFFFFFFFSz#V#xSggggggggggSz#V#xS::::::::::Sz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSAAAAAAAAAASz#V#xSFFFFFFFFFFSz#V#xSggggggggggSz#V#xS::::::::::Sz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSAAAAAAAAAASz#V#xSFFFFFFFFFFSz#V#xSggggggggggSz#V#xS::::::::::Sz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSAAAAAAAAAASz#V#xSFFFFFFFFFFSz#V#xSggggggggggSz#V#xSLLLLLLLLLLSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSAAAAAAAAAASz#V#xSQQQQQQQQQQSz#V#xSKKKKKKKKKKSz#V#xSLLLLLLLLLLSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSDDDDDDDDDDSz#V#xSQQQQQQQQQQSz#V#xSKKKKKKKKKKSz#V#xSLLLLLLLLLLSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSDDDDDDDDDDSz#V#xSIIIIIIIIIISz#V#xSKKKKKKKKKKSz#V#xSLLLLLLLLLLSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSDDDDDDDDDDSz#V#xSIIIIIIIIIISz#V#xSKKKKKKKKKKSz#V#xSuuuuuuuuuuSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSDDDDDDDDDDSz#V#xSttttttttttSz#V#xSKKKKKKKKKKSz#V#xSuuuuuuuuuuSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSDDDDDDDDDDSz#V#xSttttttttttSz#V#xSKKKKKKKKKKSz#V#xSuuuuuuuuuuSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSDDDDDDDDDDSz#V#xSOOOOOOOOOOSz#V#xSKKKKKKKKKKSz#V#xSJJJJJJJJSSSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSDDDDDDDDDDSz#V#xSOOOOOOOOOOSz#V#xSKKKKKKKKKKSz#V#xSJJJJJJJJSSSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xS22kkkkkkkkSz#V#xSOOOOOOOOOOSz#V#xSppppppppppSz#V#xSJJJJJJJJSSSz                                       1
+1        #V#xS9999999999Sz#V#xS22kkkkkkkkSz#V#xSOOOOOOOOOOSz#V#xSppppppppppSz#V#xSJJJJJJJJSSSz                                       1
+1        #V#xS9999999999Sz#V#xS22kkkkkkkkSz#V#xSOOOOOOOOOOSz#V#xSppppppppppSz#V#xSJJJJJJJJSSSz                                       1
+1        #V#xS9999999999Sz#V#xS22kkkkkkkkSz#V#xSOOOOOOOOOOSz#V#xSppppppppppSz#V#xSJJJJJJJJSSSz                                       1
+1        #V#xS9999999999Sz#V#xS22kkkkkkkkSz#V#xSOOOOOOOOOOSz#V#xSppppppppppSz#V#xSJJJJJJJJSSSz                                       1
+1        #V#xS9999999999Sz#V#xS22kkkkkkkkSz#V#xSOOOOOOOOOOSz#V#xSppppppppppSz#V#xSJJJJJJJJSSSz                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz                                       1
+1        #V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB                                       1
+1        ###########################################################################################################                 1
+1        ###HHHHHHHHHHHHHH###HHHHHHHHHHHHHH###HHHHHHHHHHHHHH###HHHHHHHHHHHHHH###HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH                 1
+1        ###########################################################################################################                 1
+1        #V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc                                       1
+1        #V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz                                       1
+1        #V#xSqqqqqIIQQQSz#V#xSuuuuuuuuuuSz#V#xSffffffffffSz#V#xSeeeeTTTTTTSz#V#xS6666666666Sz                                       1
+1        #V#xSqqqqqIIQQQSz#V#xSuuuuuuuuuuSz#V#xSffffffffffSz#V#xSeeeeTTTTTTSz#V#xS6666666666Sz                                       1
+1        #V#xSqqqqqIIQQQSz#V#xSuuuuuuuuuuSz#V#xSffffffffffSz#V#xSeeeeTTTTTTSz#V#xS6666666666Sz                                       1
+1        #V#xSqqqqqIIQQQSz#V#xSttttttttttSz#V#xSffffffffffSz#V#xSyyyyyyyyyySz#V#xS6666666666Sz                                       1
+1        #V#xSqqqqqQQQQQSz#V#xSttttttttttSz#V#xSiiiiiiiiiiSz#V#xSyyyyyyyyyySz#V#xS6666666666Sz                                       1
+1        #V#xSdddddQQQQQSz#V#xSTTTTTTTTTTSz#V#xSiiiiiiiiiiSz#V#xSLLLLLLLLLLSz#V#xS6666666666Sz                                       1
+1        #V#xSdddddQQQQQSz#V#xSTTTTTTTTTTSz#V#xSaaaYYYYYYYSz#V#xSLLLLLLLLLLSz#V#xS6666666666Sz                                       1
+1           xSwwwwwQQQQQSz#V#xSTTTTTTTTTTSz#V#xSaaaYYYYYYYSz#V#xSLLLLLLLLLLSz#V#xS5555555555Sz                                       1
+1           xSwwwwwQQQQQSz#V#xSYYYYYYYYYYSz#V#xSaaaYYYYYYYSz#V#xSLLLLLLLLLLSz#V#xS5555555555Sz                                       1
+1           xSwwwwwYYYYYSz#V#xSYYYYYYYYYYSz#V#xSTTTTTTTTTTSz#V#xS;;;;;;;;;;Sz#V#xS5555555555Sz                                       1
+1           xSwwwwwYYYYYSz#V#xSyyyyyyyyyySz#V#xSTTTTTTTTTTSz#V#xS;;;;;;;;;;Sz#V#xS5555555555Sz                                       1
+1           xSwwwwweeeeeSz#V#xSyyyyyyyyyySz#V#xSTTTTTTTTTTSz#V#xSjjjjjjjj33Sz#V#xS5555555555Sz                                       1
+1           xSwwwwweeeeeSz#V#xSUUUUUUUUUUSz#V#xSllllllllllSz#V#xSjjjjjjjj33Sz#V#xS5555555555Sz                                       1
+1           xSWWWWWWWWWWSz#V#xSUUUUUUUUUUSz#V#xSllllllllllSz#V#xSjjjjjjjj33Sz#V#xS5555555555Sz                                       1
+1           xSWWWWWWWWWWSz#V#xSiiiiiiiiiiSz#V#xS;;;;;;KKKKSz#V#xSjjjjjjjj33Sz#V#xS5555555555Sz                                       1
+1           xSWWWWWWWWWWSz#V#xSiiiiiiiiiiSz#V#xS;;;;;;KKKKSz#V#xSjjjjjjjj33Sz#V#xS5555555555Sz                                       1
+1           xSWWWWWWWWWWSz#V#xSooooooooooSz#V#xSGGGGGGKKKKSz#V#xSjjjjjjjj33Sz#V#xS5555555555Sz                                       1
+1           xSWWWWWWWWWWSz#V#xSooooooooooSz#V#xSGGGGGGKKKKSz#V#xSjjjjjjjj33Sz#V#xS5555555555Sz                                       1
+1           xSWWWWWWWWWWSz#V#xSooooooooooSz#V#xSGGGGGGKKKKSz#V#xSjjjjjjjj33Sz#V#xS5555555555Sz                                       1
+1           xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz                                       1
+1           bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB                                       1
+1           ##################################################################################                                       1
+1           HHHHHHHHHHHHHH###HHHHHHHHHHHHHH###HHHHHHHHHHHHHH###HHHHHHHHHHHHHH###HHHHHHHHHHHHHH                                       1
+1           ##################################################################################                                       1
+1           CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc                                       1
+1           xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz                                       1
+1           xSTTTTTyyyyySz#V#xSTT>>nnnnnnSz#V#xSMMMMMMMMMMSz#V#xS""""""NNNNSz#V#xS44444GGGGGSz                                       1
+1           xSTTTTTyyyyySz#V#xSTT>>nnnnnnSz#V#xSMMMMMMMMMMSz#V#xS""""""NNNNSz#V#xS44444GGGGGSz                                       1
+1           xSmmmmmmmmmmSz#V#xSTT>>nnnnnnSz#V#xSMMMMMMMMMMSz#V#xS""""""NNNNSz#V#xS44444GGGGGSz                                       1
+1           xSmmmmmmmmmmSz#V#xSTT>>nnnnnnSz#V#xSMMMMMMMMMMSz#V#xS""""""NNNNSz#V#xS44444GGGGGSz                                       1
+1           xSuuuuuuuuuuSz#V#xSTT>>nnnnnnSz#V#xSMMMMMMMMMMSz#V#xShhhhhhhhhhSz#V#xSGGGGGiiiiiSz                                       1
+1           xSuuuuuuuuuuSz#V#xSTT>>nnnnnnSz#V#xSMMMMMMMMMMSz#V#xShhhhhhhhhhSz#V#xSGGGGGiiiiiSz                                       1
+1           xSuuuuuuuuuuSz#V#xSyyyyyyyyyySz#V#xSMMMMMMMMMMSz#V#xShhhhhhhhhhSz#V#xSGGGGGtttttSz                                       1
+1           xSLLLLLLLLLLSz#V#xSyyyyyyyyyySz#V#xSMMMMMMMMMMSz#V#xShhhhhhhhhhSz#V#xSGGGGGtttttSz                                       1
+1           xSLLLLLLLLLLSz#V#xS,,,,,,,,,,Sz#V#xSmmmmmmmmmmSz#V#xS''''''''''Sz#V#xS3333333333Sz                                       1
+1           xSLLLLLLLLLLSz#V#xS,,,,,,,,,,Sz#V#xSmmmmmmmmmmSz#V#xS''''''''''Sz#V#xS3333333333Sz                                       1
+1           xSLLLLLLLLLLSz#V#xS,,,,,,,,,,Sz#V#xSIIIIIIIIIISz#V#xS''''''''''Sz#V#xS3333333333Sz                                       1
+1           xSttttttttttSz#V#xS,,,,,,,,,,Sz#V#xSIIIIIIIIIISz#V#xS''''''''''Sz#V#xS3333333333Sz                                       1
+1           xSttttttttttSz#V#xShhhhhhhhhhSz#V#xSUUUUUUUUUUSz#V#xSllllllllllSz#V#xS3333333333Sz                                       1
+1           xSttttttttttSz#V#xShhhhhhhhhhSz#V#xSUUUUUUUUUUSz#V#xSllllllllllSz#V#xS3333333333Sz                                       1
+1           xSiiiiiiiiiiSz#V#xShhhhhhhhhhSz#V#xSiiiiiiiiiiSz#V#xSyyyyyyyyyySz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xShhhhhhhhhhSz#V#xSiiiiiiiiiiSz#V#xSyyyyyyyyyySz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xSTTTTTYYYYYSz#V#xSiiiiiieeeeSz#V#xSeeeeyyyyyySz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xSTTTTTYYYYYSz#V#xSiiiiiieeeeSz#V#xSeeeeyyyyyySz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xSTTTTTYYYYYSz#V#xSiiiiiieeeeSz#V#xSeeeeyyyyyySz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xSTTTTTYYYYYSz#V#xSiiiiiieeeeSz#V#xSeeeeyyyyyySz#V#xS<<<<<<<<<<Sz                                       1
+1           xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz                                       1
+1           bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB                                       1
+1           ##################################################################################                                       1
+1           HHHHHHHHHHHHHH###HHHHHHHHHHHHHH###HHHHHHHHHHHHHH###HHHHHHHHHHHHHH#P#HHHHHHHHHHHHHH                                       1
+1           ##################################################################################                                       1
+1           CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc#V#CZZZZZZZZZZZZc                                       1
+1           xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz                                       1
+1           xSyyyyy<<<<<Sz#V#xS;;;;333333Sz#V#xSTTTTTTeeeeSz#V#xSeeeettttttSz#V#xSTTTTTTTTTTSz                                       1
+1           xSyyyyy<<<<<Sz#V#xS;;;;333333Sz#V#xSTTTTTTeeeeSz#V#xSeeeettttttSz#V#xSTTTTTTTTTTSz                                       1
+1           xSyyyyy<<<<<Sz#V#xSllll333333Sz#V#xSTTTTTTeeeeSz#V#xSeeeettttttSz#V#xS;;;;;;;;;;Sz                                       1
+1           xSyyyyy<<<<<Sz#V#xSllll333333Sz#V#xSTTTTTTeeeeSz#V#xSeeeettttttSz#V#xS;;;;;;;;;;Sz                                       1
+1           xS..........Sz#V#xSllllllllllSz#V#xSTTTTTTTTTTSz#V#xSttttttttttSz#V#xSllllllllllSz                                       1
+1           xS..........Sz#V#xSllllllllllSz#V#xSTTTTTTTTTTSz#V#xSttttttttttSz#V#xSllllllllllSz                                       1
+1           xS3333333333Sz#V#xS//////////Sz#V#xS>>>>>>>>>>Sz#V#xS3333333333Sz#V#xS..........Sz                                       1
+1           xS3333333333Sz#V#xS//////////Sz#V#xS>>>>>>>>>>Sz#V#xS3333333333Sz#V#xS..........Sz                                       1
+1           xS3333333333Sz#V#xS//////////Sz#V#xS<<<<<<<<<<Sz#V#xS3333333333Sz#V#xSTTTTTTTTTTSz                                       1
+1           xS3333333333Sz#V#xS//////////Sz#V#xS<<<<<<<<<<Sz#V#xS3333333333Sz#V#xSTTTTTTTTTTSz                                       1
+1           xS3333333333Sz#V#xSTTTTTTTTTTSz#V#xS<<<<<<<<<<Sz#V#xS3333333333Sz#V#xSTTTTTTTTTTSz                                       1
+1           xS3333333333Sz#V#xSTTTTTTTTTTSz#V#xS<<<<<<<<<<Sz#V#xS3333333333Sz#V#xSTTTTTTTTTTSz                                       1
+1           xSIIIIIIIIIISz#V#xSTTTTTTTTTTSz#V#xS<<<<<<<<<<Sz#V#xS<<<<<<<<<<Sz#V#xSTTTTTTTTTTSz                                       1
+1           xSIIIIIIIIIISz#V#xS''''''''''Sz#V#xS<<<<<<<<<<Sz#V#xS<<<<<<<<<<Sz#V#xSyyyyyyyyyySz                                       1
+1           xSIIIIIIIIIISz#V#xS''''''''''Sz#V#xSLLLLLLLLLLSz#V#xS<<<<<<<<<<Sz#V#xSyyyyyyyyyySz                                       1
+1           xSIIIIIIIIIISz#V#xS''''''''''Sz#V#xSLLLLLLLLLLSz#V#xS<<<<<<<<<<Sz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xS''''''''''Sz#V#xSLLLLLLLLLLSz#V#xS<<<<<<<<<<Sz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xS3333333333Sz#V#xSLLLLLLLLLLSz#V#xS<<<<<<<<<<Sz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xS3333333333Sz#V#xSyyyyyyyyyySz#V#xS<<<<<<<<<<Sz#V#xS<<<<<<<<<<Sz                                       1
+1           xSiiiiiiiiiiSz#V#xS3333333333Sz#V#xSyyyyyyyyyySz#V#xS<<<<<<<<<<Sz#V#xS<<<<<<<<<<Sz                                       1
+1           xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz#V#xSSSSSSSSSSSSz                                       1
+1           bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB#V#bXXXXXXXXXXXXB                                       1
+1                                                                                                                                    1
+1                                                                                                                                    1
+1                                                                                                                                    1
+1                                                                                                                                    1
+1                                                                                                                                    1
+1                                                                                                                                    1
+11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111

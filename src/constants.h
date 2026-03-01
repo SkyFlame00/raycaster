@@ -5,6 +5,8 @@
 //const int SCREEN_HEIGHT = 768;
 const int SCREEN_WIDTH = 320;
 const int SCREEN_HEIGHT = 240;
+//const int SCREEN_WIDTH = 360;
+//const int SCREEN_HEIGHT = 200;
 //const int SCREEN_WIDTH = 200;
 //const int SCREEN_HEIGHT = 150;
 //const int SCREEN_WIDTH = 160;

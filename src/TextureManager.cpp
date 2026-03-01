@@ -1,6 +1,7 @@
 #include "TextureManager.h"
 
 #include <iostream>
+#include <filesystem>
 #include <stb/stb_image.h>
 
 namespace ray
@@ -70,7 +71,10 @@ namespace ray
 
 		TexturePtr texture = std::make_shared<Texture>(data, width, height, nrChannels);
 
-		m_Textures[path] = texture;
+		std::filesystem::path pathObj{ path };
+		std::string filename = pathObj.filename();
+
+		m_Textures[filename] = texture;
 
 		return texture;
 	}
